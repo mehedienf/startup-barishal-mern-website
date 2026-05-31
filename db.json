@@ -1,0 +1,59 @@
+{
+  "contacts": [
+    {
+      "id": "msg-1234",
+      "firstName": "Sabbir",
+      "lastName": "Hassan",
+      "email": "sabbir@example.com",
+      "subject": "Mentorship",
+      "message": "I am a CSE student from Barishal University. I have a prototype for an agritech platform and would love to get structural mentoring regarding business registration.",
+      "createdAt": "2026-05-28T09:23:05.938Z"
+    },
+    {
+      "id": "msg-5678",
+      "firstName": "Nadia",
+      "lastName": "Islam",
+      "email": "nadia.islam@startup.bd",
+      "subject": "Partnership",
+      "message": "We represent a microfinance fund looking to explore supporting local incubators with standard seed matching. Let's schedule a conference call.",
+      "createdAt": "2026-05-30T09:23:05.938Z"
+    }
+  ],
+  "applications": [
+    {
+      "id": "app-9876",
+      "fullName": "Zamil Ahmed",
+      "email": "zamil@greenbarishal.co",
+      "startupName": "GreenBarishal Logistics",
+      "stage": "Early Traction",
+      "description": "Eco-friendly last-mile delivery system utilizing electric vans to transport fresh fish from Barishal divisions directly to major markets.",
+      "teamSize": 5,
+      "status": "Approved",
+      "notes": "Outstanding logistics unit. Approved for June cohort incubation, allocated workspace desk.",
+      "createdAt": "2026-05-26T09:23:05.938Z"
+    },
+    {
+      "id": "app-5432",
+      "fullName": "Tahmina Akter",
+      "email": "tahmina@sheinnovates.io",
+      "startupName": "SheInnovates EdTech",
+      "stage": "Prototype",
+      "description": "An offline-first interactive learning kit matching technical training in regional schools to global tech syllabi.",
+      "teamSize": 3,
+      "status": "Pending",
+      "createdAt": "2026-05-29T09:23:05.938Z"
+    }
+  ],
+  "subscribers": [
+    {
+      "id": "sub-1",
+      "email": "enammehedi06@gmail.com",
+      "createdAt": "2026-05-21T09:23:05.938Z"
+    },
+    {
+      "id": "sub-2",
+      "email": "partner@barishalhub.org",
+      "createdAt": "2026-05-27T09:23:05.938Z"
+    }
+  ]
+}
