@@ -1,0 +1,4 @@
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/flicksiz/startupbarishal.flicksize.com/
+    - /bin/cp -R dist/* $DEPLOYPATH
