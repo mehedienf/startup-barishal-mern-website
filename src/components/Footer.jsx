@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { Mail, CheckCircle2, ArrowRight } from "lucide-react";
+import { Mail, CheckCircle2, ArrowRight, Facebook, Instagram, Linkedin, Youtube } from "lucide-react";
+
+const SOCIAL_LINKS = [
+  { icon: Facebook, label: "Facebook", href: "https://facebook.com/startupbarishal" },
+  { icon: Instagram, label: "Instagram", href: "https://instagram.com/startupbarishal" },
+  { icon: Linkedin, label: "LinkedIn", href: "https://linkedin.com/company/startupbarishal" },
+  { icon: Youtube, label: "YouTube", href: "https://youtube.com/@startupbarishal" },
+];
 
 export default function Footer({ onNavigate }) {
   const [email, setEmail] = useState("");
@@ -58,6 +65,20 @@ export default function Footer({ onNavigate }) {
             <p className="text-sm text-[#5a4136]/80 max-w-[280px] leading-relaxed mb-4">
               Empowering the next generation of innovators by connecting dots for entrepreneurs in the Barishal region and beyond.
             </p>
+            <div className="flex items-center gap-2.5">
+              {SOCIAL_LINKS.map(({ icon: Icon, label, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Follow us on ${label}`}
+                  className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-primary-orange hover:border-primary-orange/40 hover:bg-primary-orange/5 transition-all"
+                >
+                  <Icon className="w-4 h-4" />
+                </a>
+              ))}
+            </div>
           </div>
 
           {/* Quick Links */}

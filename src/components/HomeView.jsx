@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { 
-  Rocket, 
-  Network, 
-  Users, 
-  GraduationCap, 
-  Coins, 
-  HeartHandshake, 
-  Building, 
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Rocket,
+  Network,
+  Users,
+  GraduationCap,
+  Coins,
+  HeartHandshake,
+  Building,
   ArrowRight,
   TrendingUp,
   Award
@@ -31,6 +31,34 @@ const HERO_IMAGES = [
   }
 ];
 
+function useCountUp(target, start, duration = 1800) {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    if (!start) {
+      setValue(0);
+      return;
+    }
+
+    let frameId;
+    let startTime;
+
+    const step = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(eased * target));
+      if (progress < 1) frameId = requestAnimationFrame(step);
+    };
+
+    setValue(0);
+    frameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frameId);
+  }, [target, start, duration]);
+
+  return value;
+}
+
 export default function HomeView({ onNavigate }) {
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
@@ -50,6 +78,32 @@ export default function HomeView({ onNavigate }) {
     subscribersCount: 2,
   });
   const [loadingStats, setLoadingStats] = useState(true);
+  const statsRef = useRef(null);
+  const [statsInView, setStatsInView] = useState(false);
+
+  useEffect(() => {
+    const el = statsRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setStatsInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.25 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const shouldAnimateStats = statsInView && !loadingStats;
+  const animatedEvents = useCountUp(stats.eventsCount, shouldAnimateStats);
+  const animatedStartups = useCountUp(stats.startupsMentored, shouldAnimateStats);
+  const animatedInvestors = useCountUp(stats.investorsOnboarded, shouldAnimateStats);
+  const animatedCohorts = useCountUp(stats.cohortsCompleted, shouldAnimateStats);
 
   // Fetch live stats from MERN Express API
   useEffect(() => {
@@ -81,32 +135,32 @@ export default function HomeView({ onNavigate }) {
       {/* Hero Section */}
       <section className="py-12 md:py-20 max-w-[1280px] mx-auto px-5 md:px-[64px]" id="hero">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
+
           {/* Hero Content Left */}
-          <div className="lg:col-span-7 flex flex-col gap-6">
+          <div className="lg:col-span-6 flex flex-col gap-6">
             <div className="inline-flex items-center gap-2 bg-[#ff6b00]/10 border border-[#ff6b00]/20 text-primary-orange px-4 py-1.5 rounded-full self-start text-xs font-semibold tracking-wide shadow-sm animate-pulse">
               <Rocket className="w-3.5 h-3.5 fill-primary-orange" />
               <span>Incubation Cohorts Open</span>
             </div>
-            
+
             <h1 className="text-3xl min-[380px]:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-secondary-blue leading-[1.12]">
               Accelerate Your <br />
               <span className="text-primary-orange">Startup Journey</span>
             </h1>
-            
+
             <p className="text-base md:text-lg text-[#5a4136]/80 max-w-[580px] leading-relaxed">
               Startup incubation programme to form investor and creators forum and entrepreneurship connection. We provide the resources, mentorship, and network you need to foster your growth.
             </p>
-            
+
             <div className="flex flex-wrap gap-4 pt-2">
-              <button 
+              <button
                 onClick={() => onNavigate("incubation")}
                 className="btn-primary px-8 py-4 text-sm font-bold flex items-center gap-2 group cursor-pointer"
               >
                 <span>Start Application</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button 
+              <button
                 onClick={() => onNavigate("about")}
                 className="btn-outline px-8 py-4 text-sm font-semibold cursor-pointer"
               >
@@ -114,74 +168,72 @@ export default function HomeView({ onNavigate }) {
               </button>
             </div>
           </div>
-          
+
           {/* Hero Image Right with catch light shadow and smooth transition slideshow */}
-          <div className="lg:col-span-5 relative animate-fadeIn">
+          <div className="lg:col-span-6 relative animate-fadeIn">
             <div className="absolute -inset-1 bg-gradient-to-tr from-primary-orange/20 to-secondary-blue/10 rounded-[2rem] blur-2xl opacity-75"></div>
-            <div className="relative h-[260px] min-[380px]:h-[320px] md:h-[420px] rounded-[2rem] overflow-hidden border-2 border-white bg-slate-900 shadow-[0_20px_50px_rgba(6,92,169,0.12)]">
+            <div className="relative w-full aspect-[16/10] sm:aspect-[5/3] lg:aspect-[3/2] rounded-[2rem] overflow-hidden border-2 border-white bg-slate-900 shadow-[0_20px_50px_rgba(6,92,169,0.12)]">
               {HERO_IMAGES.map((img, idx) => (
-                <img 
+                <img
                   key={idx}
-                  alt={img.alt} 
-                  className={`absolute inset-0 w-full h-full object-cover hover:scale-105 transition-[opacity,transform] duration-750 ease-in-out ${
-                    idx === currentImgIndex ? "opacity-95 z-10 scale-100" : "opacity-0 z-0 scale-105"
-                  }`} 
+                  alt={img.alt}
+                  className={`absolute inset-0 w-full h-full object-cover hover:scale-105 transition-[opacity,transform] duration-750 ease-in-out ${idx === currentImgIndex ? "opacity-95 z-10 scale-100" : "opacity-0 z-0 scale-105"
+                    }`}
                   referrerPolicy="no-referrer"
                   src={img.src}
                 />
               ))}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-transparent to-transparent z-20 pointer-events-none"></div>
-              
+
               {/* Subtle indicators at the bottom */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-30 bg-slate-950/60 px-2.5 py-1.5 rounded-full border border-white/10">
                 {HERO_IMAGES.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setCurrentImgIndex(idx)}
-                    className={`w-2 h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                      idx === currentImgIndex 
-                        ? "bg-primary-orange w-4 hover:bg-primary-orange" 
-                        : "bg-white/60 hover:bg-white"
-                    }`}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 cursor-pointer ${idx === currentImgIndex
+                      ? "bg-primary-orange w-4 hover:bg-primary-orange"
+                      : "bg-white/60 hover:bg-white"
+                      }`}
                     aria-label={`Go to slide ${idx + 1}`}
                   />
                 ))}
               </div>
             </div>
           </div>
- 
+
         </div>
       </section>
 
       {/* Dynamic Statistics Block */}
-      <section className="py-8 bg-slate-50 border-y border-slate-200/60" id="stats">
-         <div className="max-w-[1280px] mx-auto px-5 md:px-[64px]">
+      <section className="py-8 bg-slate-50 border-y border-slate-200/60" id="stats" ref={statsRef}>
+        <div className="max-w-[1280px] mx-auto px-5 md:px-[64px]">
           <div className="grid grid-cols-1 min-[360px]:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 text-center">
-            
+
             <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow transition-shadow">
               <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-primary-orange">
-                {loadingStats ? "..." : `${stats.eventsCount}+`}
+                {loadingStats ? "..." : `${animatedEvents}+`}
               </h3>
               <p className="text-[10px] sm:text-xs md:text-sm font-semibold text-slate-500 mt-1 uppercase tracking-wider">Events & Workshops</p>
             </div>
-            
+
             <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow transition-shadow">
               <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-primary-orange">
-                {loadingStats ? "..." : `${stats.startupsMentored}+`}
+                {loadingStats ? "..." : `${animatedStartups}+`}
               </h3>
               <p className="text-[10px] sm:text-xs md:text-sm font-semibold text-slate-500 mt-1 uppercase tracking-wider">Startups Mentored</p>
             </div>
-            
+
             <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow transition-shadow">
               <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-primary-orange">
-                {loadingStats ? "..." : `${stats.investorsOnboarded}+`}
+                {loadingStats ? "..." : `${animatedInvestors}+`}
               </h3>
               <p className="text-[10px] sm:text-xs md:text-sm font-semibold text-slate-500 mt-1 uppercase tracking-wider">Investors Onboarded</p>
             </div>
-            
+
             <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow transition-shadow">
               <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-primary-orange">
-                {loadingStats ? "..." : `${stats.cohortsCompleted}+`}
+                {loadingStats ? "..." : `${animatedCohorts}+`}
               </h3>
               <p className="text-[10px] sm:text-xs md:text-sm font-semibold text-slate-500 mt-1 uppercase tracking-wider">Cohorts Completed</p>
             </div>
@@ -202,13 +254,13 @@ export default function HomeView({ onNavigate }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
+
           {/* Networking Box (Large Bento Grid Item) */}
           <div className="md:col-span-2 bg-gradient-to-br from-white to-slate-50 p-8 rounded-[1.8rem] border border-slate-200/80 relative overflow-hidden group hover:shadow-md transition-all duration-300">
             <div className="absolute right-0 bottom-0 opacity-[0.03] text-secondary-blue translate-x-12 translate-y-12">
               <Network className="w-64 h-64" />
             </div>
-            
+
             <div className="relative z-10 flex flex-col justify-between h-full min-h-[220px]">
               <div>
                 <div className="w-12 h-12 rounded-2xl bg-primary-orange/10 text-primary-orange flex items-center justify-center mb-6 shadow-sm">
@@ -288,7 +340,7 @@ export default function HomeView({ onNavigate }) {
       {/* CALL TO ACTION with Orange-Crimson glass style mapping */}
       <section className="py-12 max-w-[1280px] mx-auto px-5 md:px-[64px]" id="cta">
         <div className="bg-gradient-to-r from-primary-orange to-[#d95a00] text-white rounded-[2rem] p-8 md:p-14 relative overflow-hidden shadow-xl shadow-orange-500/10">
-          
+
           {/* Subtle linear decorative shapes */}
           <div className="absolute inset-0 z-0 pointer-events-none opacity-10">
             <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[150%] bg-white rounded-full blur-3xl rotate-12"></div>
@@ -305,7 +357,7 @@ export default function HomeView({ onNavigate }) {
             <p className="text-sm md:text-base text-white/95 leading-relaxed max-w-[650px]">
               Join our next incubation cohort. Get access to the physical office desk resources, direct capital networks, and senior engineering mentors needed to scale your project.
             </p>
-            <button 
+            <button
               onClick={() => onNavigate("incubation")}
               className="bg-white text-primary-orange hover:text-primary-hover px-8 py-4 rounded-xl font-bold text-sm shadow-md transition-all hover:bg-slate-50 hover:translate-y-[-2px] mt-4 z-10 cursor-pointer"
             >
@@ -320,7 +372,7 @@ export default function HomeView({ onNavigate }) {
         <h3 className="text-xs uppercase tracking-widest font-extrabold text-slate-400 mb-8">
           Our Valued Partners
         </h3>
-        
+
         {/* Infinite sliding container with beautiful fading gradients */}
         <div className="relative w-full overflow-hidden hover-pause before:absolute before:left-0 before:top-0 before:z-10 before:h-full before:w-12 sm:before:w-28 before:bg-gradient-to-r before:from-white before:to-transparent after:absolute after:right-0 after:top-0 after:z-10 after:h-full after:w-12 sm:after:w-28 after:bg-gradient-to-l after:from-white after:to-transparent">
           <div className="animate-marquee flex items-center gap-4 py-2">
@@ -332,13 +384,13 @@ export default function HomeView({ onNavigate }) {
                   { id: 3, name: "Partner 3", logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuD8OMnMiMbSaXLvGLNZwTuvPOeMSWhnPK5GWhJJyyYLDtf_Ix3WKfubODZX-9SdI8hdkwlj4OURi3EM0dH5B9YO4mF7JcFsCF60KDLD1n4loK1rDKqsHEUyOla6PqRszu3K8j_P8PVsT22ONOsnxkOHEdLqcwxd7avhmxtuZ1EqrUku0mgC0PgHY7UOo0pT4agisOZaRjgewLcJmn-uIBevduonVuRQTBDE9fHSlcefhcRH7u7eMT-SE_WbZFDxGLtMThB2tp2YebM" },
                   { id: 4, name: "Partner 4", logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuAjMr8T_k8wjN2tkt1l7dE7OtTJw1XIFuz9c3pbBgv7OjOppDMs831jGIjIWo0rW6PpXLrgNmPgf5THqKXGZLzaPgP4C2Y2hegFV38OuZwJuOH9gk_K8j6hTMPFQjGgndyN_iWxsqd0vEbNstst52LIAUhYmeIEfXdSDoMf7oGqH4gIBOAegb5xxptCX4yKFWgt6d1hpy3wdRAyjKa86D-qB_tfOX8m7Kr8Ge9NgG1m1RpVVwI20K7Oo2CR5xziPsoSU5jWDaU5smhU" },
                 ].map((part) => (
-                  <div 
-                    key={`${loopIdx}-${part.id}`} 
+                  <div
+                    key={`${loopIdx}-${part.id}`}
                     className="px-6 py-4 bg-white rounded-2xl border border-slate-200 shadow-sm hover:scale-[1.03] transition-transform w-36 h-20 flex items-center justify-center shrink-0 mx-2"
                   >
-                    <img 
-                      alt={part.name} 
-                      className="max-h-12 max-w-full object-contain opacity-70 hover:opacity-100 transition-opacity" 
+                    <img
+                      alt={part.name}
+                      className="max-h-12 max-w-full object-contain opacity-70 hover:opacity-100 transition-opacity"
                       src={part.logo}
                       referrerPolicy="no-referrer"
                     />

@@ -3,6 +3,7 @@ import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import HomeView from "./components/HomeView";
 import AboutView from "./components/AboutView";
+import EventsView from "./components/EventsView";
 import ContactView from "./components/ContactView";
 import IncubationView from "./components/IncubationView";
 import AdminConsole from "./components/AdminConsole";
@@ -21,6 +22,8 @@ export default function App() {
         return <HomeView onNavigate={setCurrentView} />;
       case "about":
         return <AboutView />;
+      case "events":
+        return <EventsView />;
       case "incubation":
         return <IncubationView />;
       case "contact":
