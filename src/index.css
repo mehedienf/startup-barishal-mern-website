@@ -38,8 +38,16 @@
     @apply inline-flex items-center justify-center bg-primary-orange hover:bg-primary-hover text-white font-medium rounded-xl transition-all duration-200 shadow-[0_4px_20px_rgba(255,107,0,0.15)] hover:shadow-[0_6px_24px_rgba(255,107,0,0.25)] hover:translate-y-[-1px];
   }
 
+  .btn-primary-pill {
+    @apply inline-flex items-center justify-center bg-primary-orange hover:bg-primary-hover text-white font-medium rounded-full transition-all duration-200 shadow-[0_4px_20px_rgba(255,107,0,0.15)] hover:shadow-[0_6px_24px_rgba(255,107,0,0.25)] hover:translate-y-[-1px];
+  }
+
   .btn-outline {
     @apply inline-flex items-center justify-center border border-primary-orange text-primary-orange hover:bg-primary-orange/5 bg-transparent font-medium rounded-xl transition-all duration-200;
+  }
+
+  .btn-outline-pill {
+    @apply inline-flex items-center justify-center border border-primary-orange text-primary-orange hover:bg-primary-orange/5 bg-transparent font-medium rounded-full transition-all duration-200;
   }
 
   .nav-active {

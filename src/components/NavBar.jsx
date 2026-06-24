@@ -44,10 +44,11 @@ export default function NavBar({ currentView, onNavigate }) {
                 onNavigate(link.id);
                 setMobileMenuOpen(false);
               }}
-              className={`text-sm tracking-wide font-medium transition-all cursor-pointer ${currentView === link.id
+              className={`text-sm tracking-wide font-medium transition-all cursor-pointer ${
+                currentView === link.id
                   ? "text-primary-orange font-bold border-b-2 border-primary-orange pb-1"
                   : "text-[#5a4136]/80 hover:text-primary-orange"
-                }`}
+              }`}
             >
               {link.label}
             </button>
@@ -56,27 +57,28 @@ export default function NavBar({ currentView, onNavigate }) {
 
         {/* Action Controls & Admin Link */}
         <div className="hidden md:flex gap-4 items-center">
-          <button
+          {/* <button
             onClick={() => onNavigate("admin")}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition-all cursor-pointer ${currentView === "admin"
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition-all cursor-pointer ${
+              currentView === "admin"
                 ? "bg-[#065ca9]/10 text-secondary-blue border border-[#065ca9]/20"
                 : "border border-slate-300 text-slate-600 hover:bg-slate-50"
-              }`}
+            }`}
             title="MERN Database Control Console"
           >
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
             <span>MERN Admin DB</span>
-          </button>
+          </button> */}
 
           <button
             onClick={() => onNavigate("incubation")}
-            className="btn-outline px-5 py-2 cursor-pointer text-sm"
+            className="btn-outline-pill px-5 py-2 cursor-pointer text-sm"
           >
             Membership
           </button>
           <button
             onClick={() => onNavigate("incubation")}
-            className="btn-primary px-5 py-2 cursor-pointer text-sm font-semibold flex items-center gap-1.5"
+            className="btn-primary-pill px-5 py-2.5 cursor-pointer text-sm font-semibold flex items-center gap-1.5"
           >
             <Rocket className="w-4 h-4" />
             <span>Apply Now</span>
@@ -87,8 +89,11 @@ export default function NavBar({ currentView, onNavigate }) {
         <div className="flex items-center gap-2 md:hidden">
           <button
             onClick={() => onNavigate("admin")}
-            className={`p-2 rounded-lg transition-all ${currentView === "admin" ? "bg-[#065ca9]/10 text-secondary-blue" : "text-slate-600 hover:bg-slate-100"
-              }`}
+            className={`p-2 rounded-lg transition-all ${
+              currentView === "admin"
+                ? "bg-[#065ca9]/10 text-secondary-blue"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
           >
             <ShieldCheck className="w-5 h-5 text-emerald-600" />
           </button>
@@ -96,7 +101,11 @@ export default function NavBar({ currentView, onNavigate }) {
             className="text-secondary-blue p-2 cursor-pointer"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
       </div>
@@ -112,10 +121,11 @@ export default function NavBar({ currentView, onNavigate }) {
                   onNavigate(link.id);
                   setMobileMenuOpen(false);
                 }}
-                className={`text-left text-base py-2 font-medium border-b border-slate-50 ${currentView === link.id
+                className={`text-left text-base py-2 font-medium border-b border-slate-50 ${
+                  currentView === link.id
                     ? "text-primary-orange font-bold pl-2 border-l-2 border-primary-orange"
                     : "text-slate-700 hover:text-primary-orange"
-                  }`}
+                }`}
               >
                 {link.label}
               </button>

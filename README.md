@@ -4,3 +4,5 @@
 3. Run the app:
    `npm run dev`
    
+for frontend publish:
+npm run build

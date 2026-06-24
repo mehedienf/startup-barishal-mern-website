@@ -82,8 +82,8 @@ export default function EventsView({ onNavigate }) {
             <section className="py-12 md:py-20 max-w-[1280px] mx-auto px-5 md:px-[64px]">
                 <div className="text-center max-w-[800px] mx-auto flex flex-col gap-4">
                     <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-secondary-blue leading-tight">
-                        Event Gallery &<br />
-                        <span className="text-primary-orange">Showcase</span>
+                        Events Gallery & 
+                        <span className="text-primary-orange"> Showcase</span>
                     </h1>
                     <div className="w-16 h-1 bg-primary-orange mx-auto rounded"></div>
                     <p className="text-base md:text-lg text-[#5a4136]/80 leading-relaxed">

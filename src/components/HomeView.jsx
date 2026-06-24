@@ -9,16 +9,21 @@ import {
   Building,
   ArrowRight,
   TrendingUp,
-  Award
+  Award,
+  Calendar, // Added for Events Overview
+  MapPin    // Added for Events Overview
 } from "lucide-react";
+
+import img1 from "../assets/img1.jpg";
+import img2 from "../assets/img2.jpg";
 
 const HERO_IMAGES = [
   {
-    src: "https://lh3.googleusercontent.com/aida-public/AB6AXuBT_HAzmMi34jNeme-OGSl-OQxLzNU_GkB5O5Dg_AGEMrwz-WdiGFyYRNbqq6nxWwbVW4SU9eYk-MOqOslPHgSomf7wibXhFkL9p_X1_bMOILJEe9xKa6m37VXNSaPH6eHGYY0PxPEEW1Oq_f0DK44Snx1Giov5LZOl5k0IAv0cvc43JyRGYkIKVO3T4MnkiXC4jzjQNgF0jqFoGH7ioIFegzVppvkO2652bgwBxpq-YzFX_qigsgFrUvKl2irKOFWdxekJxBY7UeQ",
+    src: img1,
     alt: "A diverse team of young startup founders collaborating together on notebooks and software kits around a modern co-working desk"
   },
   {
-    src: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1000&q=80",
+    src: img2,
     alt: "Diverse tech team brainstorming ideas and drawing workflows on wireframes"
   },
   {
@@ -26,7 +31,7 @@ const HERO_IMAGES = [
     alt: "Developers and designers discussing interface models and business strategies"
   },
   {
-    src: "https://images.unsplash.com/photo-1531535934027-667f687cada1?auto=format&fit=crop&w=1000&q=80",
+    src: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1000&q=80",
     alt: "Group workshop mentoring session for budding local innovators"
   }
 ];
@@ -169,7 +174,7 @@ export default function HomeView({ onNavigate }) {
             </div>
           </div>
 
-          {/* Hero Image Right with catch light shadow and smooth transition slideshow */}
+          {/* Hero Image Right */}
           <div className="lg:col-span-6 relative animate-fadeIn">
             <div className="absolute -inset-1 bg-gradient-to-tr from-primary-orange/20 to-secondary-blue/10 rounded-[2rem] blur-2xl opacity-75"></div>
             <div className="relative w-full aspect-[16/10] sm:aspect-[5/3] lg:aspect-[3/2] rounded-[2rem] overflow-hidden border-2 border-white bg-slate-900 shadow-[0_20px_50px_rgba(6,92,169,0.12)]">
@@ -255,7 +260,7 @@ export default function HomeView({ onNavigate }) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-          {/* Networking Box (Large Bento Grid Item) */}
+          {/* Networking Box */}
           <div className="md:col-span-2 bg-gradient-to-br from-white to-slate-50 p-8 rounded-[1.8rem] border border-slate-200/80 relative overflow-hidden group hover:shadow-md transition-all duration-300">
             <div className="absolute right-0 bottom-0 opacity-[0.03] text-secondary-blue translate-x-12 translate-y-12">
               <Network className="w-64 h-64" />
@@ -334,6 +339,108 @@ export default function HomeView({ onNavigate }) {
             <div className="mt-4 text-xs font-semibold text-slate-400">6th Floor High Tech facility active</div>
           </div>
 
+        </div>
+      </section>
+
+      {/* NEW SECTION: New Events Overview Section (Added Before CTA) */}
+      <section className="py-16 bg-slate-50 border-y border-slate-200/50" id="events-overview">
+        <div className="max-w-[1280px] mx-auto px-5 md:px-[64px]">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+            <div className="flex flex-col gap-3">
+              <h2 className="text-3xl md:text-4xl font-extrabold text-secondary-blue tracking-tight">
+                Latest Events & Ecosystem Highlights
+              </h2>
+              <p className="text-base text-[#5a4136]/80 max-w-[600px] leading-relaxed">
+                Catch up with the latest startup community summits, developer sprint bootcamps, and workshop galleries.
+              </p>
+            </div>
+            <button
+              onClick={() => onNavigate("events")}
+              className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:border-primary-orange/40 text-secondary-blue hover:text-primary-orange px-6 py-3 rounded-full text-sm font-bold shadow-sm hover:shadow transition-all whitespace-nowrap self-start md:self-auto cursor-pointer"
+            >
+              <span>Explore All Events</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Quick Highlight Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Card 1 */}
+            <div className="bg-white rounded-[1.8rem] border border-slate-200/80 p-6 flex flex-col sm:flex-row gap-6 shadow-sm hover:shadow-md transition-shadow group">
+              <div className="w-full sm:w-44 h-40 shrink-0 rounded-2xl overflow-hidden bg-slate-100">
+                <img 
+                  src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=600&q=80" 
+                  alt="Networking Event" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="flex flex-col justify-between py-1">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-primary-orange">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>June 25, 2024</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-secondary-blue leading-snug line-clamp-1">
+                    Startup Networking Summit
+                  </h3>
+                  <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                    Connect with fellow entrepreneurs, investors, and senior engineering mentors in the regional ecosystem.
+                  </p>
+                </div>
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="flex items-center gap-1 text-slate-400 text-xs font-medium">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="line-clamp-1">Innovation Hub</span>
+                  </div>
+                  <button 
+                    onClick={() => onNavigate("events")}
+                    className="text-xs font-bold text-primary-orange hover:text-primary-hover inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>More</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2 */}
+            <div className="bg-white rounded-[1.8rem] border border-slate-200/80 p-6 flex flex-col sm:flex-row gap-6 shadow-sm hover:shadow-md transition-shadow group">
+              <div className="w-full sm:w-44 h-40 shrink-0 rounded-2xl overflow-hidden bg-slate-100">
+                <img 
+                  src="https://images.unsplash.com/photo-1531535934027-667f687cada1?auto=format&fit=crop&w=600&q=80" 
+                  alt="Product Workshop" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="flex flex-col justify-between py-1">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-primary-orange">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>July 5, 2024</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-secondary-blue leading-snug line-clamp-1">
+                    Product Development Workshop
+                  </h3>
+                  <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                    Learn essential skills in modern MVP development, user interface mapping, and fast customer validation models.
+                  </p>
+                </div>
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="flex items-center gap-1 text-slate-400 text-xs font-medium">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="line-clamp-1">Tech Academy Center</span>
+                  </div>
+                  <button 
+                    onClick={() => onNavigate("events")}
+                    className="text-xs font-bold text-primary-orange hover:text-primary-hover inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>More</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
