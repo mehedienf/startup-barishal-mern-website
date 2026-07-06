@@ -1,0 +1,68 @@
+{
+  "contacts": [
+    {
+      "id": "msg-zqi0snm",
+      "firstName": "Smoke",
+      "lastName": "",
+      "email": "smoke@test.com",
+      "subject": "General Inquiry",
+      "message": "verify",
+      "createdAt": "2026-07-06T10:59:16.424Z"
+    },
+    {
+      "id": "msg-1234",
+      "firstName": "Sabbir",
+      "lastName": "Hassan",
+      "email": "sabbir@example.com",
+      "subject": "Mentorship",
+      "message": "I am a CSE student from Barishal University. I have a prototype for an agritech platform and would love to get structural mentoring regarding business registration.",
+      "createdAt": "2026-07-03T10:59:16.387Z"
+    },
+    {
+      "id": "msg-5678",
+      "firstName": "Nadia",
+      "lastName": "Islam",
+      "email": "nadia.islam@startup.bd",
+      "subject": "Partnership",
+      "message": "We represent a microfinance fund looking to explore supporting local incubators with standard seed matching. Let's schedule a conference call.",
+      "createdAt": "2026-07-05T10:59:16.387Z"
+    }
+  ],
+  "applications": [
+    {
+      "id": "app-9876",
+      "fullName": "Zamil Ahmed",
+      "email": "zamil@greenbarishal.co",
+      "startupName": "GreenBarishal Logistics",
+      "stage": "Early Traction",
+      "description": "Eco-friendly last-mile delivery system utilizing electric vans to transport fresh fish from Barishal divisions directly to major markets.",
+      "teamSize": 5,
+      "status": "Approved",
+      "notes": "Outstanding logistics unit. Approved for June cohort incubation, allocated workspace desk.",
+      "createdAt": "2026-07-01T10:59:16.387Z"
+    },
+    {
+      "id": "app-5432",
+      "fullName": "Tahmina Akter",
+      "email": "tahmina@sheinnovates.io",
+      "startupName": "SheInnovates EdTech",
+      "stage": "Prototype",
+      "description": "An offline-first interactive learning kit matching technical training in regional schools to global tech syllabi.",
+      "teamSize": 3,
+      "status": "Pending",
+      "createdAt": "2026-07-04T10:59:16.387Z"
+    }
+  ],
+  "subscribers": [
+    {
+      "id": "sub-1",
+      "email": "enammehedi06@gmail.com",
+      "createdAt": "2026-06-26T10:59:16.387Z"
+    },
+    {
+      "id": "sub-2",
+      "email": "partner@barishalhub.org",
+      "createdAt": "2026-07-02T10:59:16.387Z"
+    }
+  ]
+}
