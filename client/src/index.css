@@ -32,11 +32,11 @@
   }
 
   .team-avatar-step {
-    --avatar-step: 110px;
+    --avatar-step: 130px;
   }
   @media (min-width: 640px) {
     .team-avatar-step {
-      --avatar-step: 150px;
+      --avatar-step: 180px;
     }
   }
 

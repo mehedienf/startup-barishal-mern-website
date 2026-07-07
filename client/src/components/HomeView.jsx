@@ -712,20 +712,20 @@ function TeamAvatarRow({ team }) {
 
   const slotStyles = {
     active: {
-      wrapper: "w-28 h-28 sm:w-36 sm:h-36 opacity-100 -translate-y-2 z-30 ring-4 ring-white shadow-2xl",
-      fontSize: "2.25rem",
+      wrapper: "w-36 h-36 sm:w-44 sm:h-44 opacity-100 -translate-y-2 z-30 ring-4 ring-white shadow-2xl",
+      fontSize: "2.75rem",
     },
     near: {
-      wrapper: "w-20 h-20 sm:w-24 sm:h-24 opacity-70 hover:opacity-100 -translate-y-0 z-20 ring-2 ring-white shadow-md",
-      fontSize: "1.25rem",
+      wrapper: "w-24 h-24 sm:w-28 sm:h-28 opacity-70 hover:opacity-100 -translate-y-0 z-20 ring-2 ring-white shadow-md",
+      fontSize: "1.5rem",
     },
     mid: {
-      wrapper: "w-16 h-16 sm:w-20 sm:h-20 opacity-50 hover:opacity-80 translate-y-1 z-10 ring-2 ring-white shadow-sm",
-      fontSize: "0.95rem",
+      wrapper: "w-20 h-20 sm:w-24 sm:h-24 opacity-50 hover:opacity-80 translate-y-1 z-10 ring-2 ring-white shadow-sm",
+      fontSize: "1.05rem",
     },
     far: {
-      wrapper: "w-12 h-12 sm:w-14 sm:h-14 opacity-30 hover:opacity-60 translate-y-2 z-0 ring-2 ring-white shadow-sm",
-      fontSize: "0.8rem",
+      wrapper: "w-14 h-14 sm:w-16 sm:h-16 opacity-30 hover:opacity-60 translate-y-2 z-0 ring-2 ring-white shadow-sm",
+      fontSize: "0.85rem",
     },
   };
 
@@ -833,7 +833,6 @@ function TeamAvatarRow({ team }) {
                   title={active.email}
                 >
                   <Mail className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{active.email}</span>
                 </a>
               )}
               {active.phone && (
@@ -843,7 +842,6 @@ function TeamAvatarRow({ team }) {
                   title={active.phone}
                 >
                   <Phone className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{active.phone}</span>
                 </a>
               )}
               {active.linkedinUrl && (
@@ -908,7 +906,7 @@ function TeamMemberCard({ member, compact = false }) {
           src={member.photoUrl}
           alt={member.name}
           className={`rounded-full object-cover border-4 border-white shadow-md ${
-            compact ? "w-16 h-16 mb-3" : "w-28 h-28 mb-5"
+            compact ? "w-20 h-20 mb-3" : "w-36 h-36 mb-5"
           }`}
           referrerPolicy="no-referrer"
           onError={(e) => { e.currentTarget.style.display = "none"; }}
@@ -917,8 +915,8 @@ function TeamMemberCard({ member, compact = false }) {
         <div
           className={`rounded-full bg-gradient-to-br from-primary-orange/20 to-secondary-blue/20 flex items-center justify-center font-bold text-primary-orange border-4 border-white shadow-md ${
             compact
-              ? "w-16 h-16 text-xl mb-3"
-              : "w-28 h-28 text-4xl mb-5"
+              ? "w-20 h-20 text-2xl mb-3"
+              : "w-36 h-36 text-5xl mb-5"
           }`}
         >
           {(member.name || "?").charAt(0)}

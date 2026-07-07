@@ -1,8 +1,41 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Menu, X, Rocket, ShieldCheck, ExternalLink } from "lucide-react";
 
 export default function NavBar({ currentView, onNavigate }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Hide the navbar when the user scrolls down past a small threshold,
+  // and reveal it again as soon as they scroll up. At the very top of the
+  // page (within the first 80px) we always show it so the brand is visible.
+  const [visible, setVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      // If we're still near the top, always show.
+      if (y < 80) {
+        setVisible(true);
+        lastScrollY.current = y;
+        return;
+      }
+      if (!ticking.current) {
+        window.requestAnimationFrame(() => {
+          const delta = y - lastScrollY.current;
+          // Scrolling down -> hide, scrolling up -> show. A 4px deadzone
+          // prevents jitter from small trackpad wobble.
+          if (delta > 4) setVisible(false);
+          else if (delta < -4) setVisible(true);
+          lastScrollY.current = y;
+          ticking.current = false;
+        });
+        ticking.current = true;
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const navLinks = [
     { id: "home", label: "Home" },
@@ -14,7 +47,11 @@ export default function NavBar({ currentView, onNavigate }) {
   ];
 
   return (
-    <header className="fixed top-0 left-0 w-full glass-nav z-50 h-[80px] flex items-center transition-all duration-300">
+    <header
+      className={`fixed top-0 left-0 w-full glass-nav z-50 h-[80px] flex items-center transition-transform duration-300 ${
+        visible ? "translate-y-0" : "-translate-y-full"
+      }`}
+    >
       <div className="max-w-[1280px] mx-auto px-5 md:px-[64px] flex justify-between items-center w-full">
         {/* Brand Logo & Name */}
         <div
