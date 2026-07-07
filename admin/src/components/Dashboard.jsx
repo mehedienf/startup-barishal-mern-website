@@ -45,10 +45,10 @@ export default function Dashboard() {
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
             <Database className="w-8 h-8 text-primary-orange shrink-0" />
-            <span>MERN Stack Database Control Centre</span>
+            <span>Database Control Centre</span>
           </h1>
           <p className="text-slate-300 text-sm max-w-[650px] leading-relaxed">
-            Live counts from <strong>db.json</strong>. Use the sidebar to manage team, events, programs, and inbound inquiries.
+            Live counts from DB. Use the sidebar to manage team, events, programs, and inbound inquiries.
           </p>
         </div>
         <button onClick={load} className="bg-primary-orange hover:bg-primary-hover text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-sm cursor-pointer shrink-0">

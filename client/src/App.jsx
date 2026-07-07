@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import HomeView from "./components/HomeView";
@@ -7,43 +8,64 @@ import EventsView from "./components/EventsView";
 import ContactView from "./components/ContactView";
 import IncubationView from "./components/IncubationView";
 
-export default function App() {
-  const [currentView, setCurrentView] = useState("home");
+// Map legacy short ids to URL paths.  This keeps components like HomeView /
+// EventsView / NavBar that still pass `onNavigate("events")` working unchanged
+// while the real source of truth is the URL.
+export const ID_TO_PATH = {
+  home: "/",
+  about: "/about",
+  events: "/events",
+  incubation: "/incubation",
+  contact: "/contact",
+};
 
-  // Automatically scroll to the top of the viewport on view changes
+export const PATH_TO_ID = Object.fromEntries(
+  Object.entries(ID_TO_PATH).map(([id, path]) => [path, id])
+);
+
+export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Smooth scroll to top on every route change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [currentView]);
+  }, [location.pathname]);
 
-  const renderView = () => {
-    switch (currentView) {
-      case "home":
-        return <HomeView onNavigate={setCurrentView} />;
-      case "about":
-        return <AboutView />;
-      case "events":
-        return <EventsView />;
-      case "incubation":
-        return <IncubationView />;
-      case "contact":
-        return <ContactView />;
-      default:
-        return <HomeView onNavigate={setCurrentView} />;
-    }
-  };
+  // Backwards-compatible navigation helper: child components still call
+  // onNavigate("events") etc.
+  const navigateById = useCallback(
+    (id) => {
+      const path = ID_TO_PATH[id] || `/${id}`;
+      navigate(path);
+    },
+    [navigate]
+  );
+
+  const currentView = PATH_TO_ID[location.pathname] || "home";
 
   return (
     <div className="min-h-screen flex flex-col mesh-bg">
       {/* Top Navigation Component */}
-      <NavBar currentView={currentView} onNavigate={setCurrentView} />
+      <NavBar currentView={currentView} onNavigate={navigateById} />
 
-      {/* Primary Display Content Canvas with standard top padding offset for fixed header */}
+      {/* Primary Display Content Canvas */}
       <main className="flex-grow pt-[80px]">
-        {renderView()}
+        <Routes>
+          <Route path="/" element={<HomeView onNavigate={navigateById} />} />
+          <Route path="/about" element={<AboutView />} />
+          <Route path="/events" element={<EventsView onNavigate={navigateById} />} />
+          <Route path="/incubation" element={<IncubationView />} />
+          <Route path="/contact" element={<ContactView />} />
+          {/* Fallback: any unknown URL takes the user home rather than 404'ing
+              inside the SPA.  A real deploy would also serve index.html for
+              these paths (Vite history fallback handles this in dev). */}
+          <Route path="*" element={<HomeView onNavigate={navigateById} />} />
+        </Routes>
       </main>
 
       {/* Footer */}
-      <Footer onNavigate={setCurrentView} />
+      <Footer onNavigate={navigateById} />
     </div>
   );
 }

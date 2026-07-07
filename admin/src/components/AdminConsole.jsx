@@ -99,7 +99,7 @@ export default function AdminConsole() {
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
             <Database className="w-8 h-8 text-primary-orange shrink-0" />
-            <span>MERN Stack Database Control Centre</span>
+            <span>Database Control Centre</span>
           </h1>
           <p className="text-slate-300 text-sm max-w-[650px] leading-relaxed">
             This administration gateway retrieves, audits, and persists records directly inside the <strong>db.json</strong> file on our Node.js and Express backend server. Use this portal to test dynamic reactive data actions!

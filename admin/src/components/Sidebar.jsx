@@ -32,7 +32,7 @@ export default function Sidebar() {
             <Database className="w-5 h-5 text-primary-orange" />
           </div>
           <div>
-            <h2 className="text-sm font-bold tracking-tight leading-none">SB Admin</h2>
+            <h2 className="text-sm font-bold tracking-tight leading-none">Startup Barishal Admin</h2>
             <p className="text-[10px] text-white/50 uppercase tracking-widest mt-0.5">v1.0</p>
           </div>
         </div>

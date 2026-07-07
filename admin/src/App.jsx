@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldCheck, ExternalLink, ArrowLeft } from "lucide-react";
+import { Database, ExternalLink, ArrowLeft } from "lucide-react";
 import Sidebar from "./components/Sidebar";
 import { Outlet } from "react-router-dom";
 
@@ -16,7 +16,7 @@ export default function App() {
           <div className="px-5 md:px-8 flex justify-between items-center w-full">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-emerald-500/15 rounded-lg">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <Database className="w-5 h-5 text-emerald-400" />
               </div>
               <div>
                 <h1 className="text-lg font-bold tracking-tight leading-none">
@@ -30,7 +30,7 @@ export default function App() {
             <div className="flex items-center gap-3">
               <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] uppercase tracking-widest text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
                 <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                MERN Live
+                Live
               </span>
               <a
                 href="http://localhost:5173"
