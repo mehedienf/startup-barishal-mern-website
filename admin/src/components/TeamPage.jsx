@@ -7,7 +7,11 @@ const FIELDS = [
   { name: "bio",         label: "Short Bio",     type: "textarea", rows: 3,        placeholder: "1–2 lines shown on the card" },
   // photoUrl is no longer edited as a text field — the photo picker writes
   // back to this field on save. See `photoUpload` below.
+  { name: "email",       label: "Email",         type: "email",                    placeholder: "name@example.com" },
+  { name: "phone",       label: "Phone Number",  type: "tel",                      placeholder: "+880 1XXX-XXXXXX" },
   { name: "linkedinUrl", label: "LinkedIn URL",  type: "url",                       placeholder: "https://linkedin.com/in/…" },
+  { name: "facebookUrl", label: "Facebook URL",  type: "url",                       placeholder: "https://facebook.com/…" },
+  { name: "twitterUrl",  label: "X (Twitter) URL", type: "url",                     placeholder: "https://x.com/…" },
   { name: "order",       label: "Display Order", type: "number",   default: 0 },
 ];
 

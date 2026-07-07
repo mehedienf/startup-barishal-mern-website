@@ -10,6 +10,7 @@ import {
   FileText,
   Handshake,
   UserPlus,
+  ImageIcon,
 } from "lucide-react";
 import logo from "../assets/startupbarishal-logo.png";
 
@@ -23,6 +24,7 @@ const navItems = [
   { to: "/subscribers", label: "Newsletter", icon: Mail, resource: "subscribers" },
   { to: "/partners", label: "Partners", icon: Handshake, resource: "partners" },
   { to: "/memberships", label: "Membership Applications", icon: UserPlus, resource: "memberships" },
+  { to: "/featured", label: "Hero Carousel", icon: ImageIcon, resource: "featured" },
 ];
 
 export default function Sidebar() {

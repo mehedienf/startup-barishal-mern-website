@@ -11,6 +11,7 @@ import ApplicationsPage from './components/ApplicationsPage.jsx';
 import SubscribersPage from './components/SubscribersPage.jsx';
 import PartnersPage from './components/PartnersPage.jsx';
 import MembershipsPage from './components/MembershipsPage.jsx';
+import FeaturedImagesPage from './components/FeaturedImagesPage.jsx';
 import './index.css';
 
 const router = createBrowserRouter([
@@ -27,6 +28,7 @@ const router = createBrowserRouter([
       { path: 'subscribers', element: <SubscribersPage /> },
       { path: 'partners', element: <PartnersPage /> },
       { path: 'memberships', element: <MembershipsPage /> },
+      { path: 'featured', element: <FeaturedImagesPage /> },
     ],
   },
 ]);

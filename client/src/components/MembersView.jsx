@@ -6,8 +6,8 @@ import {
   Briefcase,
   GraduationCap,
   ArrowRight,
-  RefreshCcw,
   Mail,
+  Search,
 } from "lucide-react";
 import Pagination from "./Pagination.jsx";
 
@@ -60,6 +60,7 @@ export default function MembersView({ onNavigate }) {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const tableContainerRef = useRef(null);
 
@@ -99,11 +100,30 @@ export default function MembersView({ onNavigate }) {
     return { total, founders, mentors, cohorts };
   }, [members]);
 
-  const totalPages = Math.max(1, Math.ceil(members.length / PAGE_SIZE));
+  // Filter by name, organization, role, or email.
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return members;
+    return members.filter((m) => {
+      return (
+        (m.fullName || "").toLowerCase().includes(q) ||
+        (m.organization || "").toLowerCase().includes(q) ||
+        (m.role || "").toLowerCase().includes(q) ||
+        (m.email || "").toLowerCase().includes(q)
+      );
+    });
+  }, [members, search]);
+
+  // Reset to page 1 whenever the search term changes.
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
-    return members.slice(start, start + PAGE_SIZE);
-  }, [members, page]);
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, page]);
 
   return (
     <div className="animate-fadeIn py-12 md:py-16 relative overflow-hidden">
@@ -138,7 +158,7 @@ export default function MembersView({ onNavigate }) {
         ref={tableContainerRef}
         className="relative max-w-[1180px] mx-auto px-5 md:px-[64px] mt-14"
       >
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
           <div>
             <h2 className="text-lg font-extrabold text-secondary-blue tracking-tight">
               Approved Members
@@ -148,15 +168,27 @@ export default function MembersView({ onNavigate }) {
               column to start a conversation.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={fetchMembers}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 border border-slate-200 hover:bg-slate-50 px-3 py-2 rounded-xl disabled:opacity-50 cursor-pointer"
-          >
-            <RefreshCcw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
+          <div className="relative w-full md:w-96">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name, organization, role, or email…"
+              aria-label="Search members"
+              className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:ring-1 focus:ring-primary-orange focus:border-primary-orange outline-none transition-all"
+            />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-500 hover:text-slate-800 px-2 py-1 rounded-md"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
 
         {error && (
@@ -166,28 +198,50 @@ export default function MembersView({ onNavigate }) {
         )}
 
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          {!loading && members.length === 0 ? (
-            <div className="p-16 text-center flex flex-col items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                <Users className="w-6 h-6" />
-              </div>
-              <h3 className="font-bold text-secondary-blue">
-                No members published yet
-              </h3>
-              <p className="text-sm text-slate-500 max-w-md">
-                Once admins approve membership applications, accepted members
-                will show up here automatically.
-              </p>
-              {typeof onNavigate === "function" && (
+          {!loading && filtered.length === 0 ? (
+            search.trim() ? (
+              <div className="p-16 text-center flex flex-col items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                  <Search className="w-6 h-6" />
+                </div>
+                <h3 className="font-bold text-secondary-blue">
+                  No members match “{search.trim()}”
+                </h3>
+                <p className="text-sm text-slate-500 max-w-md">
+                  Try a different name, organization, role, or email — or
+                  clear the search to see everyone.
+                </p>
                 <button
                   type="button"
-                  onClick={() => onNavigate("membership")}
-                  className="mt-2 inline-flex items-center gap-1.5 btn-primary px-5 py-2.5 text-sm font-semibold rounded-xl"
+                  onClick={() => setSearch("")}
+                  className="mt-2 text-xs font-bold text-secondary-blue hover:text-primary-orange border border-slate-200 hover:bg-slate-50 px-4 py-2 rounded-xl"
                 >
-                  Apply to join <ArrowRight className="w-4 h-4" />
+                  Clear search
                 </button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="p-16 text-center flex flex-col items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                  <Users className="w-6 h-6" />
+                </div>
+                <h3 className="font-bold text-secondary-blue">
+                  No members published yet
+                </h3>
+                <p className="text-sm text-slate-500 max-w-md">
+                  Once admins approve membership applications, accepted members
+                  will show up here automatically.
+                </p>
+                {typeof onNavigate === "function" && (
+                  <button
+                    type="button"
+                    onClick={() => onNavigate("membership")}
+                    className="mt-2 inline-flex items-center gap-1.5 btn-primary px-5 py-2.5 text-sm font-semibold rounded-xl"
+                  >
+                    Apply to join <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-sm">
@@ -283,7 +337,7 @@ export default function MembersView({ onNavigate }) {
           <Pagination
             page={page}
             totalPages={totalPages}
-            totalItems={members.length}
+            totalItems={filtered.length}
             pageSize={PAGE_SIZE}
             onPageChange={setPage}
             itemLabel="member"

@@ -34,12 +34,15 @@ const COVER_MAX_BYTES = 4 * 1024 * 1024;
  *                  underneath the picker and the chosen value is saved into
  *                  `coverUpload.aspectField` (default "coverRatio") on the record.
  *                  aspectOptions = [{ value: "4/2", label: "Wide (4:2)", className: "aspect-[4/2]" }, ...]
- *   - photoUpload: optional { fieldName, folderHint, maxMb, endpointSuffix } that, when set,
- *                  enables a round photo picker in the form, a circular avatar column in the
+ *   - photoUpload: optional { fieldName, folderHint, maxMb, endpointSuffix, shape } that,
+ *                  when set, enables a photo picker in the form, a thumbnail column in the
  *                  list, and POST/PUT/DELETE calls to /api/<resource>/<id>/<endpointSuffix>
  *                  (default suffix "photo"). The URL is stored on record.photoUpload.fieldName.
- *                  Use this for resources where the asset is a portrait/avatar (e.g. team
- *                  members) and you want the form preview to render as a circle.
+ *                  `shape` (optional) defaults to "circle" — pass "square" for landscape assets
+ *                  (e.g. hero/feature images) so the form preview and list column render with
+ *                  rounded-xl corners and an ImagePlus placeholder instead of a round avatar.
+ *   - hideSearch: optional boolean. When true, the top search input is hidden (useful for
+ *                  pages with very few records like hero/featured image pickers).
  */
 export default function ResourcePage({
   resource,
@@ -50,6 +53,7 @@ export default function ResourcePage({
   searchFields = [],
   coverUpload,
   photoUpload,
+  hideSearch = false,
 }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -108,16 +112,18 @@ export default function ResourcePage({
         </button>
       </header>
 
-      <div className="relative w-full md:w-96 mb-6">
-        <input
-          type="text"
-          placeholder="Search…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:ring-1 focus:ring-primary-orange focus:border-primary-orange outline-none transition-all"
-        />
-        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-      </div>
+      {!hideSearch && (
+        <div className="relative w-full md:w-96 mb-6">
+          <input
+            type="text"
+            placeholder="Search…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:ring-1 focus:ring-primary-orange focus:border-primary-orange outline-none transition-all"
+          />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        </div>
+      )}
 
       {toast && (
         <div className={`mb-6 px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 ${
@@ -166,22 +172,28 @@ export default function ResourcePage({
                           )}
                         </td>
                       )}
-                      {photoUpload && !renderItem && (
-                        <td className="p-4 align-top">
-                          {item[photoUpload.fieldName] ? (
-                            <img
-                              src={item[photoUpload.fieldName]}
-                              alt="photo"
-                              className="w-12 h-12 rounded-full object-cover border border-slate-200 bg-slate-50"
-                              onError={(e) => { e.currentTarget.style.display = "none"; }}
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-300 border border-slate-200">
-                              <User className="w-5 h-5" />
-                            </div>
-                          )}
-                        </td>
-                      )}
+                      {photoUpload && !renderItem && (() => {
+                        const isSquarePhoto = photoUpload.shape === "square";
+                        const photoWrapClass = isSquarePhoto
+                          ? "w-14 h-10 rounded-lg"
+                          : "w-12 h-12 rounded-full";
+                        return (
+                          <td className="p-4 align-top">
+                            {item[photoUpload.fieldName] ? (
+                              <img
+                                src={item[photoUpload.fieldName]}
+                                alt="photo"
+                                className={`${photoWrapClass} object-cover border border-slate-200 bg-slate-50`}
+                                onError={(e) => { e.currentTarget.style.display = "none"; }}
+                              />
+                            ) : (
+                              <div className={`${photoWrapClass} bg-slate-100 flex items-center justify-center text-slate-300 border border-slate-200`}>
+                                {isSquarePhoto ? <ImagePlus className="w-5 h-5" /> : <User className="w-5 h-5" />}
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })()}
                       <td className="p-4 align-top">
                         {renderItem ? renderItem(item) : (
                           <div>
@@ -571,13 +583,19 @@ function ResourceForm({ resource, fields, initial, coverUpload, photoUpload, onC
               </div>
             )}
             {/* Photo upload picker (only when photoUpload config is set). */}
-            {photoUpload && (
+            {photoUpload && (() => {
+              const isSquarePhoto = photoUpload.shape === "square";
+              const pickerWrapClass = isSquarePhoto
+                ? "w-28 h-20 rounded-xl"
+                : "w-20 h-20 rounded-full";
+              const PickerIcon = isSquarePhoto ? ImagePlus : User;
+              return (
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
                   Photo
                 </label>
                 <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-full border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
+                  <div className={`${pickerWrapClass} border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0`}>
                     {photoPreview ? (
                       <img
                         src={photoPreview}
@@ -585,7 +603,7 @@ function ResourceForm({ resource, fields, initial, coverUpload, photoUpload, onC
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <User className="w-7 h-7 text-slate-300" />
+                      <PickerIcon className="w-7 h-7 text-slate-300" />
                     )}
                   </div>
                   <div className="flex flex-col gap-2">
@@ -623,7 +641,8 @@ function ResourceForm({ resource, fields, initial, coverUpload, photoUpload, onC
                   </code>.
                 </p>
               </div>
-            )}
+              );
+            })()}
           {fields.map((f) => (
             <div key={f.name} className="flex flex-col gap-1.5">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">

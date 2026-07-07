@@ -21,11 +21,13 @@ const EVENT_UPLOADS_DIR = path.join(SERVER_UPLOADS_DIR, "events");
 const COHORT_UPLOADS_DIR = path.join(SERVER_UPLOADS_DIR, "cohorts");
 const TEAM_UPLOADS_DIR = path.join(SERVER_UPLOADS_DIR, "teams");
 const PARTNER_UPLOADS_DIR = path.join(SERVER_UPLOADS_DIR, "partners");
+const FEATURED_UPLOADS_DIR = path.join(SERVER_UPLOADS_DIR, "featured");
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 fs.mkdirSync(EVENT_UPLOADS_DIR, { recursive: true });
 fs.mkdirSync(COHORT_UPLOADS_DIR, { recursive: true });
 fs.mkdirSync(TEAM_UPLOADS_DIR, { recursive: true });
 fs.mkdirSync(PARTNER_UPLOADS_DIR, { recursive: true });
+fs.mkdirSync(FEATURED_UPLOADS_DIR, { recursive: true });
 
 // ---------- Helpers ----------
 function newId(prefix) {
@@ -1125,6 +1127,191 @@ app.delete("/api/teamMembers/:id/photo", (req, res) => {
   if (idx === -1) return res.status(404).json({ error: "Team member not found." });
   removeTeamFileIfOwned(arr[idx].id, arr[idx].photoUrl);
   arr[idx].photoUrl = "";
+  arr[idx].updatedAt = new Date().toISOString();
+  writeDB(db);
+  res.json({ success: true, data: arr[idx] });
+});
+
+// ---------- Featured / Hero image uploads ----------
+// Powers the homepage hero carousel. Files land in
+// server/uploads/featured/<featuredId>/<random>.<ext> and are served at
+// /uploads/featured/<featuredId>/<file>. Reuses the same image-mime allow
+// list as the events module.
+const featuredImageStorage = multer.diskStorage({
+  destination: (req, _file, cb) => {
+    const featuredId = req.params.id;
+    const dir = path.join(FEATURED_UPLOADS_DIR, featuredId);
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase() || ".jpg";
+    const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    cb(null, `featured-${stamp}${ext}`);
+  },
+});
+const featuredImageUpload = multer({
+  storage: featuredImageStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB — hero shots need extra room
+  fileFilter: (_req, file, cb) => {
+    if (ALLOWED_IMAGE_MIME.test(file.mimetype)) cb(null, true);
+    else cb(new Error("Only image files (png/jpg/webp/gif) are allowed."));
+  },
+});
+
+function publicUrlForFeaturedFile(featuredId, filename) {
+  return `/uploads/featured/${featuredId}/${filename}`;
+}
+
+function removeFeaturedFileIfOwned(featuredId, url) {
+  if (!url || typeof url !== "string") return;
+  const prefix = publicUrlForFeaturedFile(featuredId, "");
+  if (!url.startsWith(prefix)) return;
+  const safe = path.basename(url);
+  const filePath = path.join(FEATURED_UPLOADS_DIR, featuredId, safe);
+  fs.promises.unlink(filePath).catch(() => {});
+}
+
+async function removeFeaturedFolder(featuredId) {
+  const dir = path.join(FEATURED_UPLOADS_DIR, featuredId);
+  await fs.promises.rm(dir, { recursive: true, force: true }).catch(() => {});
+}
+
+// Serve the new tree so /uploads/featured/<id>/<file> resolves to disk.
+app.use("/uploads/featured", express.static(FEATURED_UPLOADS_DIR));
+
+// GET /api/featured — public endpoint consumed by the homepage hero
+// carousel. Sorted by `order` (ascending) so admins can dictate the slide
+// sequence, then by createdAt as a tiebreaker.
+app.get("/api/featured", (_req, res) => {
+  const db = readDB();
+  const list = (db.featured || [])
+    .slice()
+    .sort((a, b) => {
+      const ao = Number.isFinite(a.order) ? a.order : 999;
+      const bo = Number.isFinite(b.order) ? b.order : 999;
+      if (ao !== bo) return ao - bo;
+      return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+    });
+  res.json(list);
+});
+
+app.get("/api/featured/:id", (req, res) => {
+  const db = readDB();
+  const item = (db.featured || []).find((f) => f.id === req.params.id);
+  if (!item) return res.status(404).json({ error: "Featured image not found." });
+  res.json(item);
+});
+
+app.post("/api/featured", (req, res) => {
+  const db = readDB();
+  if (!db.featured) db.featured = [];
+  const item = {
+    id: newId("feat"),
+    title: (req.body.title || "").toString().trim(),
+    altText: (req.body.altText || "").toString().trim(),
+    imageUrl: (req.body.imageUrl || "").toString().trim(),
+    order: Number.isFinite(Number(req.body.order)) ? Number(req.body.order) : db.featured.length + 1,
+    active: req.body.active === false ? false : true,
+    createdAt: new Date().toISOString(),
+  };
+  db.featured.unshift(item);
+  writeDB(db);
+  res.status(201).json({ success: true, data: item });
+});
+
+app.put("/api/featured/:id", (req, res) => {
+  const db = readDB();
+  const arr = db.featured || [];
+  const idx = arr.findIndex((f) => f.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Featured image not found." });
+  const next = {
+    ...arr[idx],
+    ...req.body,
+    id: arr[idx].id,
+    updatedAt: new Date().toISOString(),
+  };
+  // Normalize the text fields so empty strings from the form don't get
+  // stored as the literal "undefined".
+  next.title = (next.title || "").toString().trim();
+  next.altText = (next.altText || "").toString().trim();
+  next.imageUrl = (next.imageUrl || "").toString().trim();
+  if (Number.isFinite(Number(next.order))) next.order = Number(next.order);
+  if (typeof req.body.active === "boolean") next.active = req.body.active;
+  arr[idx] = next;
+  writeDB(db);
+  res.json({ success: true, data: arr[idx] });
+});
+
+app.delete("/api/featured/:id", async (req, res) => {
+  const db = readDB();
+  const arr = db.featured || [];
+  const idx = arr.findIndex((f) => f.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Featured image not found." });
+  const [removed] = arr.splice(idx, 1);
+  if (removed?.imageUrl) removeFeaturedFileIfOwned(removed.id, removed.imageUrl);
+  await removeFeaturedFolder(removed.id);
+  writeDB(db);
+  res.json({ success: true, data: removed });
+});
+
+// Dedicated upload endpoints — POST/PUT both accept multipart field "image".
+// Mirrors /api/partners/:id/logo so the shared ResourcePage photoUpload
+// config can drive the form without any custom wiring.
+app.post(
+  "/api/featured/:id/image",
+  // ResourceForm.submit() always submits the file under the field name
+  // "photo" regardless of the resource, so we read it under that name to
+  // stay aligned with the rest of the admin upload endpoints (team, etc.).
+  featuredImageUpload.single("photo"),
+  (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "No image file uploaded." });
+    const db = readDB();
+    const arr = db.featured || [];
+    const idx = arr.findIndex((f) => f.id === req.params.id);
+    if (idx === -1) {
+      fs.unlink(req.file.path, () => {});
+      return res.status(404).json({ error: "Featured image not found." });
+    }
+    removeFeaturedFileIfOwned(arr[idx].id, arr[idx].imageUrl);
+    arr[idx].imageUrl = publicUrlForFeaturedFile(arr[idx].id, req.file.filename);
+    arr[idx].updatedAt = new Date().toISOString();
+    writeDB(db);
+    res.status(201).json({ success: true, data: arr[idx] });
+  }
+);
+
+app.put(
+  "/api/featured/:id/image",
+  // Same field-name alignment as the POST endpoint above — the admin UI
+  // submits the file as "photo".
+  featuredImageUpload.single("photo"),
+  (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "No image file uploaded." });
+    const db = readDB();
+    const arr = db.featured || [];
+    const idx = arr.findIndex((f) => f.id === req.params.id);
+    if (idx === -1) {
+      fs.unlink(req.file.path, () => {});
+      return res.status(404).json({ error: "Featured image not found." });
+    }
+    removeFeaturedFileIfOwned(arr[idx].id, arr[idx].imageUrl);
+    arr[idx].imageUrl = publicUrlForFeaturedFile(arr[idx].id, req.file.filename);
+    arr[idx].updatedAt = new Date().toISOString();
+    writeDB(db);
+    res.status(200).json({ success: true, data: arr[idx] });
+  }
+);
+
+// Clear the image (keeps the record, blanks imageUrl). Files we own are
+// also unlinked from disk.
+app.delete("/api/featured/:id/image", (req, res) => {
+  const db = readDB();
+  const arr = db.featured || [];
+  const idx = arr.findIndex((f) => f.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Featured image not found." });
+  removeFeaturedFileIfOwned(arr[idx].id, arr[idx].imageUrl);
+  arr[idx].imageUrl = "";
   arr[idx].updatedAt = new Date().toISOString();
   writeDB(db);
   res.json({ success: true, data: arr[idx] });

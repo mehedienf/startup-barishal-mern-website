@@ -13,6 +13,10 @@ import {
   Calendar, // Added for Events Overview
   MapPin,   // Added for Events Overview
   Linkedin, // Added for Team section
+  Mail,     // Team contact: email
+  Phone,    // Team contact: phone
+  Facebook, // Team social: facebook
+  Twitter,  // Team social: X (twitter)
   Loader2,  // Added for loading states
   ChevronLeft,
   ChevronRight
@@ -21,7 +25,7 @@ import {
 import img1 from "../assets/img1.jpg";
 import img2 from "../assets/img2.jpg";
 
-const HERO_IMAGES = [
+const FALLBACK_HERO_IMAGES = [
   {
     src: img1,
     alt: "A diverse team of young startup founders collaborating together on notebooks and software kits around a modern co-working desk"
@@ -89,12 +93,49 @@ export default function HomeView({ onNavigate }) {
     (activeCohort?.applyButtonLink && activeCohort.applyButtonLink.trim()) || "";
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
+  // Hero slides — uploads from the admin panel if any, otherwise the
+  // bundled fallback set above. Each entry is { src, alt }. When an admin
+  // record exists without an uploaded file it is skipped so a half-filled
+  // list still renders cleanly.
+  const [heroSlides, setHeroSlides] = useState(FALLBACK_HERO_IMAGES);
+
   useEffect(() => {
+    let cancelled = false;
+    async function loadFeatured() {
+      try {
+        const res = await fetch("/api/featured");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        if (Array.isArray(data) && data.length) {
+          const slides = data
+            .filter((f) => f && f.imageUrl)
+            .map((f) => ({ src: f.imageUrl, alt: f.altText || f.title || "" }));
+          if (slides.length) setHeroSlides(slides);
+        }
+      } catch (err) {
+        // Network hiccup — keep the bundled fallback so the hero never blanks.
+        console.error("Failed to load hero slides:", err);
+      }
+    }
+    loadFeatured();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Whenever the slide list changes (admin uploaded a new photo, etc.)
+  // snap back to the first slide so a stale index doesn't try to render
+  // a slide that no longer exists.
+  useEffect(() => {
+    setCurrentImgIndex(0);
+  }, [heroSlides]);
+
+  useEffect(() => {
+    if (!heroSlides || heroSlides.length < 2) return undefined;
     const timer = setInterval(() => {
-      setCurrentImgIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+      setCurrentImgIndex((prev) => (prev + 1) % heroSlides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [heroSlides]);
 
   // Live team + events from API
   const [team, setTeam] = useState([]);
@@ -270,21 +311,27 @@ export default function HomeView({ onNavigate }) {
           <div className="lg:col-span-6 relative animate-fadeIn">
             <div className="absolute -inset-1 bg-gradient-to-tr from-primary-orange/20 to-secondary-blue/10 rounded-[2rem] blur-2xl opacity-75"></div>
             <div className="relative w-full aspect-[16/10] sm:aspect-[5/3] lg:aspect-[3/2] rounded-[2rem] overflow-hidden border-2 border-white bg-slate-900 shadow-[0_20px_50px_rgba(6,92,169,0.12)]">
-              {HERO_IMAGES.map((img, idx) => (
+              {heroSlides.map((img, idx) => (
                 <img
-                  key={idx}
+                  key={img.src}
                   alt={img.alt}
                   className={`absolute inset-0 w-full h-full object-cover hover:scale-105 transition-[opacity,transform] duration-750 ease-in-out ${idx === currentImgIndex ? "opacity-95 z-10 scale-100" : "opacity-0 z-0 scale-105"
                     }`}
                   referrerPolicy="no-referrer"
                   src={img.src}
+                  onError={(e) => {
+                    // If an admin-uploaded URL fails to resolve, drop the
+                    // slide from the list so the carousel keeps rotating
+                    // through valid images.
+                    e.currentTarget.style.display = "none";
+                  }}
                 />
               ))}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-transparent to-transparent z-20 pointer-events-none"></div>
 
               {/* Subtle indicators at the bottom */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-30 bg-slate-950/60 px-2.5 py-1.5 rounded-full border border-white/10">
-                {HERO_IMAGES.map((_, idx) => (
+                {heroSlides.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setCurrentImgIndex(idx)}
@@ -774,28 +821,77 @@ function TeamAvatarRow({ team }) {
               {active.bio}
             </p>
           )}
-          {active.linkedinUrl && (
-            <a
-              href={active.linkedinUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-secondary-blue hover:text-primary-orange transition-colors"
-            >
-              <Linkedin className="w-3.5 h-3.5" />
-              <span>Connect on LinkedIn</span>
-            </a>
+          {/* Contact + social row (email, phone, linkedin, facebook, x).
+              Each link is only rendered when its data is present so admins
+              can leave fields blank without showing an empty icon. */}
+          {(active.email || active.phone || active.linkedinUrl || active.facebookUrl || active.twitterUrl) && (
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-semibold text-secondary-blue">
+              {active.email && (
+                <a
+                  href={`mailto:${active.email}`}
+                  className="inline-flex items-center gap-1.5 hover:text-primary-orange transition-colors"
+                  title={active.email}
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{active.email}</span>
+                </a>
+              )}
+              {active.phone && (
+                <a
+                  href={`tel:${active.phone.replace(/\s+/g, "")}`}
+                  className="inline-flex items-center gap-1.5 hover:text-primary-orange transition-colors"
+                  title={active.phone}
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{active.phone}</span>
+                </a>
+              )}
+              {active.linkedinUrl && (
+                <a
+                  href={active.linkedinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 hover:text-primary-orange transition-colors"
+                  title="LinkedIn"
+                >
+                  <Linkedin className="w-3.5 h-3.5" />
+                </a>
+              )}
+              {active.facebookUrl && (
+                <a
+                  href={active.facebookUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 hover:text-primary-orange transition-colors"
+                  title="Facebook"
+                >
+                  <Facebook className="w-3.5 h-3.5" />
+                </a>
+              )}
+              {active.twitterUrl && (
+                <a
+                  href={active.twitterUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 hover:text-primary-orange transition-colors"
+                  title="X (Twitter)"
+                >
+                  <Twitter className="w-3.5 h-3.5" />
+                </a>
+              )}
+            </div>
           )}
         </div>
       </div>
 
       {/* Counter */}
-      <div className="mt-6 text-xs font-semibold text-slate-500 tracking-wider">
+      {/* <div className="mt-6 text-xs font-semibold text-slate-500 tracking-wider">
         <span className="text-primary-orange">
           {String(index + 1).padStart(2, "0")}
         </span>
         <span className="mx-1.5 text-slate-300">/</span>
         <span>{String(total).padStart(2, "0")}</span>
-      </div>
+      </div> */}
     </div>
   );
 }
@@ -847,16 +943,34 @@ function TeamMemberCard({ member, compact = false }) {
           {member.bio}
         </p>
       )}
-      {!compact && member.linkedinUrl && (
-        <a
-          href={member.linkedinUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-secondary-blue hover:text-primary-orange transition-colors"
-        >
-          <Linkedin className="w-3.5 h-3.5" />
-          <span>Connect on LinkedIn</span>
-        </a>
+      {!compact && (member.email || member.phone || member.linkedinUrl || member.facebookUrl || member.twitterUrl) && (
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-secondary-blue">
+          {member.email && (
+            <a href={`mailto:${member.email}`} title={member.email} className="hover:text-primary-orange transition-colors">
+              <Mail className="w-4 h-4" />
+            </a>
+          )}
+          {member.phone && (
+            <a href={`tel:${member.phone.replace(/\s+/g, "")}`} title={member.phone} className="hover:text-primary-orange transition-colors">
+              <Phone className="w-4 h-4" />
+            </a>
+          )}
+          {member.linkedinUrl && (
+            <a href={member.linkedinUrl} target="_blank" rel="noopener noreferrer" title="LinkedIn" className="hover:text-primary-orange transition-colors">
+              <Linkedin className="w-4 h-4" />
+            </a>
+          )}
+          {member.facebookUrl && (
+            <a href={member.facebookUrl} target="_blank" rel="noopener noreferrer" title="Facebook" className="hover:text-primary-orange transition-colors">
+              <Facebook className="w-4 h-4" />
+            </a>
+          )}
+          {member.twitterUrl && (
+            <a href={member.twitterUrl} target="_blank" rel="noopener noreferrer" title="X (Twitter)" className="hover:text-primary-orange transition-colors">
+              <Twitter className="w-4 h-4" />
+            </a>
+          )}
+        </div>
       )}
     </div>
   );

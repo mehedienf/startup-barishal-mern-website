@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Rocket, Eye, Loader2 } from "lucide-react";
+import { Rocket, Eye, Loader2, Mail, Phone, Linkedin, Facebook, Twitter } from "lucide-react";
 
 export default function AboutView() {
   // Live team members from the MERN API
@@ -128,6 +128,35 @@ export default function AboutView() {
                   <p className="text-primary-orange font-semibold text-sm">{member.role}</p>
                   {member.bio && (
                     <p className="text-slate-500 text-xs line-clamp-2">{member.bio}</p>
+                  )}
+                  {(member.email || member.phone || member.linkedinUrl || member.facebookUrl || member.twitterUrl) && (
+                    <div className="mt-3 flex items-center justify-center gap-3 text-secondary-blue">
+                      {member.email && (
+                        <a href={`mailto:${member.email}`} title={member.email} className="hover:text-primary-orange transition-colors">
+                          <Mail className="w-4 h-4" />
+                        </a>
+                      )}
+                      {member.phone && (
+                        <a href={`tel:${member.phone.replace(/\s+/g, "")}`} title={member.phone} className="hover:text-primary-orange transition-colors">
+                          <Phone className="w-4 h-4" />
+                        </a>
+                      )}
+                      {member.linkedinUrl && (
+                        <a href={member.linkedinUrl} target="_blank" rel="noopener noreferrer" title="LinkedIn" className="hover:text-primary-orange transition-colors">
+                          <Linkedin className="w-4 h-4" />
+                        </a>
+                      )}
+                      {member.facebookUrl && (
+                        <a href={member.facebookUrl} target="_blank" rel="noopener noreferrer" title="Facebook" className="hover:text-primary-orange transition-colors">
+                          <Facebook className="w-4 h-4" />
+                        </a>
+                      )}
+                      {member.twitterUrl && (
+                        <a href={member.twitterUrl} target="_blank" rel="noopener noreferrer" title="X (Twitter)" className="hover:text-primary-orange transition-colors">
+                          <Twitter className="w-4 h-4" />
+                        </a>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
