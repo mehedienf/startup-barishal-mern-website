@@ -5,12 +5,13 @@ import {
   Users,
   Calendar,
   GraduationCap,
-  Database,
   Mail,
   MessageSquare,
   FileText,
   Handshake,
+  UserPlus,
 } from "lucide-react";
+import logo from "../assets/startupbarishal-logo.png";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -21,6 +22,7 @@ const navItems = [
   { to: "/applications", label: "Cohort Applicants", icon: FileText, resource: "applications" },
   { to: "/subscribers", label: "Newsletter", icon: Mail, resource: "subscribers" },
   { to: "/partners", label: "Partners", icon: Handshake, resource: "partners" },
+  { to: "/memberships", label: "Membership Applications", icon: UserPlus, resource: "memberships" },
 ];
 
 export default function Sidebar() {
@@ -28,13 +30,17 @@ export default function Sidebar() {
     <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-[260px] bg-[#0b1f3a] text-white flex-col border-r border-white/10 z-50">
       <div className="h-[72px] flex items-center px-6 border-b border-white/10 shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-primary-orange/15 rounded-lg">
-            <Database className="w-5 h-5 text-primary-orange" />
+          <div className="p-1.5 bg-white rounded-lg shrink-0">
+            <img
+              src={logo}
+              alt="Startup Barishal"
+              className="h-7 w-auto max-w-[140px] object-contain"
+            />
           </div>
-          <div>
+          {/* <div>
             <h2 className="text-sm font-bold tracking-tight leading-none">Startup Barishal Admin</h2>
             <p className="text-[10px] text-white/50 uppercase tracking-widest mt-0.5">v1.0</p>
-          </div>
+          </div> */}
         </div>
       </div>
 

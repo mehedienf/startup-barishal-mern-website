@@ -77,7 +77,7 @@ export default function EventsPage() {
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Events</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Upcoming, past, or drafts. Cover image shows on the public events card; gallery images appear in the event detail view.
+            Upcoming, past, or drafts. Cover image shows on the public events card.
           </p>
         </div>
         <button

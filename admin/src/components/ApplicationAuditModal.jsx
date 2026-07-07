@@ -2,6 +2,27 @@ import React from "react";
 import { X, CheckCircle2, XCircle, Clock } from "lucide-react";
 
 /**
+ * Formats an ISO timestamp into a human-readable date + time string.
+ * Falls back to "—" when missing/invalid.
+ */
+function formatSubmittedAt(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const datePart = d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+  const timePart = d.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  return `${datePart} · ${timePart}`;
+}
+
+/**
  * Auditing modal for cohort applications. Posts a status update with
  * an optional note to /api/applications/:id.
  */
@@ -15,6 +36,11 @@ export default function ApplicationAuditModal({ application, note, onNoteChange,
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Auditing Candidate Detail</span>
             <h3 className="text-xl font-bold text-secondary-blue mt-0.5">{application.startupName}</h3>
+            {application.programName && (
+              <p className="text-[11px] font-semibold text-slate-500 mt-1 uppercase tracking-wider">
+                Cohort: <span className="text-secondary-blue">{application.programName}</span>
+              </p>
+            )}
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 font-bold text-lg p-1.5">✕</button>
         </div>
@@ -36,6 +62,18 @@ export default function ApplicationAuditModal({ application, note, onNoteChange,
             <div>
               <span className="text-xs text-slate-400 block">Current Status</span>
               <span className="font-semibold text-amber-800">{application.status}</span>
+            </div>
+            <div className="sm:col-span-2">
+              <span className="text-xs text-slate-400 block">Submission Timestamp</span>
+              <div className="inline-flex items-center gap-1.5 mt-0.5">
+                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <span
+                  className="font-semibold text-[#191c1e]"
+                  title={application.createdAt || ""}
+                >
+                  {formatSubmittedAt(application.createdAt)}
+                </span>
+              </div>
             </div>
           </div>
 

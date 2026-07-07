@@ -5,7 +5,8 @@ const FIELDS = [
   { name: "name",        label: "Name",          type: "text",     required: true, placeholder: "Jane Doe" },
   { name: "role",        label: "Role / Title",  type: "text",     required: true, placeholder: "Programme Director" },
   { name: "bio",         label: "Short Bio",     type: "textarea", rows: 3,        placeholder: "1–2 lines shown on the card" },
-  { name: "photoUrl",    label: "Photo URL",     type: "url",                       placeholder: "https://…" },
+  // photoUrl is no longer edited as a text field — the photo picker writes
+  // back to this field on save. See `photoUpload` below.
   { name: "linkedinUrl", label: "LinkedIn URL",  type: "url",                       placeholder: "https://linkedin.com/in/…" },
   { name: "order",       label: "Display Order", type: "number",   default: 0 },
 ];
@@ -15,9 +16,18 @@ export default function TeamPage() {
     <ResourcePage
       resource="teamMembers"
       title="Team Members"
-      subtitle="Drag-and-drop via display order. Photo URL is loaded directly on the public site."
+      subtitle="Drag-and-drop via display order. Profile photos upload to server/uploads/teams/."
       fields={FIELDS}
       searchFields={["name", "role"]}
+      // Enables the round photo picker in the form, a circular avatar column
+      // in the list, and PUT /api/teamMembers/:id/photo on save. Existing
+      // remote photoUrl values stay intact unless the admin replaces them.
+      photoUpload={{
+        fieldName: "photoUrl",
+        folderHint: "teams",
+        maxMb: 4,
+        endpointSuffix: "photo",
+      }}
       renderItem={(item) => (
         <div className="flex items-start gap-3">
           {item.photoUrl ? (

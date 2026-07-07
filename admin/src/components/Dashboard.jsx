@@ -51,7 +51,7 @@ export default function Dashboard() {
             Live counts from DB. Use the sidebar to manage team, events, programs, and inbound inquiries.
           </p>
         </div>
-        <button onClick={load} className="bg-primary-orange hover:bg-primary-hover text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-sm cursor-pointer shrink-0">
+        <button onClick={load} className="bg-primary-orange hover:bg-primary-hover text-white text-xs font-bold px-6 py-3 rounded-full transition-all shadow-sm cursor-pointer shrink-0">
           Refresh
         </button>
       </section>

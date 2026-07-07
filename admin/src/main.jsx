@@ -10,6 +10,7 @@ import ContactsPage from './components/ContactsPage.jsx';
 import ApplicationsPage from './components/ApplicationsPage.jsx';
 import SubscribersPage from './components/SubscribersPage.jsx';
 import PartnersPage from './components/PartnersPage.jsx';
+import MembershipsPage from './components/MembershipsPage.jsx';
 import './index.css';
 
 const router = createBrowserRouter([
@@ -25,6 +26,7 @@ const router = createBrowserRouter([
       { path: 'applications', element: <ApplicationsPage /> },
       { path: 'subscribers', element: <SubscribersPage /> },
       { path: 'partners', element: <PartnersPage /> },
+      { path: 'memberships', element: <MembershipsPage /> },
     ],
   },
 ]);

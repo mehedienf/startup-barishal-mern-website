@@ -9,6 +9,7 @@ export default function NavBar({ currentView, onNavigate }) {
     { id: "about", label: "About" },
     { id: "events", label: "Events" },
     { id: "incubation", label: "Incubation" },
+    { id: "members", label: "Members" },
     { id: "contact", label: "Contact" },
   ];
 
@@ -62,7 +63,7 @@ export default function NavBar({ currentView, onNavigate }) {
           </a> */}
 
           <button
-            onClick={() => onNavigate("incubation")}
+            onClick={() => onNavigate("membership")}
             className="btn-outline-pill px-5 py-2 cursor-pointer text-sm"
           >
             Membership
@@ -135,7 +136,7 @@ export default function NavBar({ currentView, onNavigate }) {
             <div className="grid grid-cols-2 gap-2 mt-1">
               <button
                 onClick={() => {
-                  onNavigate("incubation");
+                  onNavigate("membership");
                   setMobileMenuOpen(false);
                 }}
                 className="w-full btn-outline py-2.5 text-center text-sm"

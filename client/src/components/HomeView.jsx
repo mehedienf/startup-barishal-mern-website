@@ -69,6 +69,24 @@ function useCountUp(target, start, duration = 1800) {
 }
 
 export default function HomeView({ onNavigate }) {
+  // Fetch the active cohort so the hero CTA button can mirror the exact
+  // label / link configured in the admin panel for "Start Application".
+  const [activeCohort, setActiveCohort] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/incubationPrograms/active")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled) setActiveCohort(data && data.id ? data : null);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+  const applyButtonLabel =
+    (activeCohort?.applyButtonLabel && activeCohort.applyButtonLabel.trim()) ||
+    "Apply for Incubation";
+  const applyButtonLink =
+    (activeCohort?.applyButtonLink && activeCohort.applyButtonLink.trim()) || "";
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
   useEffect(() => {
@@ -220,13 +238,25 @@ export default function HomeView({ onNavigate }) {
             </p>
 
             <div className="flex flex-wrap gap-4 pt-2">
-              <button
-                onClick={() => onNavigate("incubation")}
-                className="btn-primary px-8 py-4 text-sm font-bold flex items-center gap-2 group cursor-pointer"
-              >
-                <span>Start Application</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
+              {applyButtonLink ? (
+                <a
+                  href={applyButtonLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary px-8 py-4 text-sm font-bold flex items-center gap-2 group cursor-pointer"
+                >
+                  <span>Apply for Incubation</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </a>
+              ) : (
+                <button
+                  onClick={() => onNavigate("incubation")}
+                  className="btn-primary px-8 py-4 text-sm font-bold flex items-center gap-2 group cursor-pointer"
+                >
+                  <span>Apply for Incubation</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              )}
               <button
                 onClick={() => onNavigate("about")}
                 className="btn-outline px-8 py-4 text-sm font-semibold cursor-pointer"
@@ -521,12 +551,24 @@ export default function HomeView({ onNavigate }) {
             <p className="text-sm md:text-base text-white/95 leading-relaxed max-w-[650px]">
               Join our next incubation cohort. Get access to the physical office desk resources, direct capital networks, and senior engineering mentors needed to scale your project.
             </p>
-            <button
-              onClick={() => onNavigate("incubation")}
-              className="bg-white text-primary-orange hover:text-primary-hover px-8 py-4 rounded-xl font-bold text-sm shadow-md transition-all hover:bg-slate-50 hover:translate-y-[-2px] mt-4 z-10 cursor-pointer"
-            >
-              Apply for Incubation
-            </button>
+            {applyButtonLink ? (
+              <a
+                href={applyButtonLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-white text-primary-orange hover:text-primary-hover px-8 py-4 rounded-xl font-bold text-sm shadow-md transition-all hover:bg-slate-50 hover:translate-y-[-2px] mt-4 z-10 cursor-pointer"
+              >
+                <span>Apply for Incubation</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </a>
+            ) : (
+              <button
+                onClick={() => onNavigate("incubation")}
+                className="bg-white text-primary-orange hover:text-primary-hover px-8 py-4 rounded-xl font-bold text-sm shadow-md transition-all hover:bg-slate-50 hover:translate-y-[-2px] mt-4 z-10 cursor-pointer"
+              >
+                Apply for Incubation
+              </button>
+            )}
           </div>
         </div>
       </section>

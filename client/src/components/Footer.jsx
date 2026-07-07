@@ -100,6 +100,11 @@ export default function Footer({ onNavigate }) {
                 </button>
               </li>
               <li>
+                <button onClick={() => onNavigate("events")} className="text-slate-600 hover:text-primary-orange transition-colors cursor-pointer text-left">
+                  Upcoming Events
+                </button>
+              </li>
+              <li>
                 <button onClick={() => onNavigate("contact")} className="text-slate-600 hover:text-primary-orange transition-colors cursor-pointer text-left">
                   Contact Support
                 </button>

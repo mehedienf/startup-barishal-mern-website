@@ -7,6 +7,8 @@ import AboutView from "./components/AboutView";
 import EventsView from "./components/EventsView";
 import ContactView from "./components/ContactView";
 import IncubationView from "./components/IncubationView";
+import MembershipView from "./components/MembershipView";
+import MembersView from "./components/MembersView";
 
 // Map legacy short ids to URL paths.  This keeps components like HomeView /
 // EventsView / NavBar that still pass `onNavigate("events")` working unchanged
@@ -17,6 +19,8 @@ export const ID_TO_PATH = {
   events: "/events",
   incubation: "/incubation",
   contact: "/contact",
+  membership: "/membership",
+  members: "/members",
 };
 
 export const PATH_TO_ID = Object.fromEntries(
@@ -56,6 +60,8 @@ export default function App() {
           <Route path="/about" element={<AboutView />} />
           <Route path="/events" element={<EventsView onNavigate={navigateById} />} />
           <Route path="/incubation" element={<IncubationView />} />
+          <Route path="/membership" element={<MembershipView />} />
+          <Route path="/members" element={<MembersView onNavigate={navigateById} />} />
           <Route path="/contact" element={<ContactView />} />
           {/* Fallback: any unknown URL takes the user home rather than 404'ing
               inside the SPA.  A real deploy would also serve index.html for
