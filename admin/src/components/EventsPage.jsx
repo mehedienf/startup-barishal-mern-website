@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { apiFetch, resolveAssetUrl } from "../lib/api.js";
 import {
   Plus,
   Pencil,
@@ -38,7 +39,7 @@ export default function EventsPage() {
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/events");
+      const res = await apiFetch("/api/events");
       if (res.ok) setItems(await res.json());
     } finally {
       setLoading(false);
@@ -54,7 +55,7 @@ export default function EventsPage() {
 
   const handleDelete = async (id) => {
     if (!confirm("Delete this event and all its uploaded images? This cannot be undone.")) return;
-    const res = await fetch(`/api/events/${id}`, { method: "DELETE" });
+    const res = await apiFetch(`/api/events/${id}`, { method: "DELETE" });
     if (res.ok) {
       setItems((prev) => prev.filter((x) => x.id !== id));
       showToast("Event deleted.");
@@ -139,7 +140,7 @@ export default function EventsPage() {
                       <div className="flex items-start gap-3">
                         {item.coverImage ? (
                           <img
-                            src={item.coverImage}
+                            src={resolveAssetUrl(item.coverImage)}
                             alt={item.title}
                             className="w-16 h-12 rounded-lg object-cover border border-slate-200 bg-slate-50 shrink-0"
                             onError={(e) => { e.currentTarget.style.display = "none"; }}
@@ -291,7 +292,7 @@ function EventForm({ initial, onClose, onSaved, onError }) {
       // 1) Save text fields via the normal CRUD endpoint
       const url = initial ? `/api/events/${initial.id}` : "/api/events";
       const method = initial ? "PUT" : "POST";
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -304,7 +305,7 @@ function EventForm({ initial, onClose, onSaved, onError }) {
       if (coverFile) {
         const fd = new FormData();
         fd.append("cover", coverFile);
-        const cr = await fetch(`/api/events/${record.id}/cover`, { method: "PUT", body: fd });
+        const cr = await apiFetch(`/api/events/${record.id}/cover`, { method: "PUT", body: fd });
         const crBody = await cr.json();
         if (!cr.ok) { onError(crBody.error || "Cover upload failed."); return; }
         record = crBody.data;
@@ -315,7 +316,7 @@ function EventForm({ initial, onClose, onSaved, onError }) {
       const originalGallery = Array.isArray(initial?.gallery) ? initial.gallery : [];
       const removed = originalGallery.filter((u) => !gallery.includes(u));
       for (const url of removed) {
-        await fetch(`/api/events/${record.id}/images?url=${encodeURIComponent(url)}`, {
+        await apiFetch(`/api/events/${record.id}/images?url=${encodeURIComponent(url)}`, {
           method: "DELETE",
         });
       }
@@ -328,7 +329,7 @@ function EventForm({ initial, onClose, onSaved, onError }) {
       if (galleryFiles.length) {
         const fd = new FormData();
         for (const gf of galleryFiles) fd.append("images", gf.file);
-        const gr = await fetch(`/api/events/${record.id}/images`, { method: "POST", body: fd });
+        const gr = await apiFetch(`/api/events/${record.id}/images`, { method: "POST", body: fd });
         const grBody = await gr.json();
         if (!gr.ok) { onError(grBody.error || "Gallery upload failed."); return; }
         record = grBody.data;
@@ -336,7 +337,7 @@ function EventForm({ initial, onClose, onSaved, onError }) {
 
       // 4) Re-fetch authoritative state so the caller always sees the
       //    server's current record (URLs, gallery order, timestamps).
-      const refetch = await fetch(`/api/events/${record.id}`);
+      const refetch = await apiFetch(`/api/events/${record.id}`);
       if (refetch.ok) record = await refetch.json();
       onSaved(record);
     } catch (err) {
@@ -410,7 +411,7 @@ function EventForm({ initial, onClose, onSaved, onError }) {
               <div className="w-28 h-20 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
                 {coverPreview ? (
                   <img
-                    src={coverPreview}
+                    src={resolveAssetUrl(coverPreview)}
                     alt="cover preview"
                     className="w-full h-full object-cover"
                   />
@@ -461,7 +462,7 @@ function EventForm({ initial, onClose, onSaved, onError }) {
                     className="relative aspect-square rounded-lg border border-slate-200 bg-slate-50 overflow-hidden group"
                   >
                     <img
-                      src={url}
+                      src={resolveAssetUrl(url)}
                       alt=""
                       className="w-full h-full object-cover"
                       onError={(e) => { e.currentTarget.style.opacity = "0.2"; }}
@@ -482,7 +483,7 @@ function EventForm({ initial, onClose, onSaved, onError }) {
                     className="relative aspect-square rounded-lg border border-dashed border-primary-orange/50 bg-orange-50 overflow-hidden group"
                   >
                     <img
-                      src={gf.previewUrl}
+                      src={resolveAssetUrl(gf.previewUrl)}
                       alt=""
                       className="w-full h-full object-cover"
                     />

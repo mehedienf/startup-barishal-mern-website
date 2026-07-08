@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { apiFetch } from "../lib/api.js";
 import { 
   Send, 
   MapPin, 
@@ -40,7 +41,7 @@ export default function ContactView() {
     setSuccessData(null);
 
     try {
-      const res = await fetch("/api/contact", {
+      const res = await apiFetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

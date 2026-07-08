@@ -48,8 +48,12 @@ export function registerFeatured(app) {
 
   app.post(`/api/${RESOURCE}`, requireAuth, (req, res) => {
     const { title, subtitle, ctaLabel, ctaUrl, imageUrl } = req.body || {};
-    if (!title || !imageUrl) {
-      return res.status(400).json({ error: "title and imageUrl required." });
+    // `title` is required (carousel entry needs a caption), but `imageUrl`
+    // is optional: the admin uploads the image in a separate step via
+    // PUT /api/featured/:id/image, after the record exists. Rejecting
+    // here would block the entire create-then-upload flow.
+    if (!title) {
+      return res.status(400).json({ error: "title is required." });
     }
     const db = readDB();
     if (!db[RESOURCE]) db[RESOURCE] = [];
@@ -59,7 +63,7 @@ export function registerFeatured(app) {
       subtitle: subtitle || "",
       ctaLabel: ctaLabel || "",
       ctaUrl: ctaUrl || "#",
-      imageUrl,
+      imageUrl: imageUrl || "",
       order: req.body.order || 999,
       createdAt: new Date().toISOString(),
     };
@@ -96,10 +100,14 @@ export function registerFeatured(app) {
     res.json({ success: true, data: removed });
   });
 
-  app.post(
-    `/api/${RESOURCE}/:id/image`,
+  // Image upload — registered under POST (legacy) and PUT (admin
+  // client convention). Same handler, both methods, one chain.
+  const uploadImage = [
     requireAuth,
-    featuredUpload.single("image"),
+    // Field name is "photo" because the shared admin upload form
+// (ResourcePage.jsx) appends "photo" to its FormData; "image" is
+// only the URL suffix.
+    featuredUpload.single("photo"),
     (req, res) => {
       const file = pickFeaturedFile(req);
       if (!file) return res.status(400).json({ error: "No file uploaded." });
@@ -114,7 +122,9 @@ export function registerFeatured(app) {
       writeDB(db);
       res.json({ success: true, data: { url } });
     },
-  );
+  ];
+  app.post(`/api/${RESOURCE}/:id/image`, ...uploadImage);
+  app.put(`/api/${RESOURCE}/:id/image`,  ...uploadImage);
 
   app.delete(`/api/${RESOURCE}/:id/image`, requireAuth, (req, res) => {
     const db = readDB();

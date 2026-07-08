@@ -64,7 +64,7 @@ export function registerApplications(app) {
     res.json({ success: true, data: arr[idx] });
   });
 
-  // List / Get / Delete via the generic factory.
+  // List / Get via the generic factory.
   app.get(`/api/${RESOURCE}`, requireAuth, (_req, res) => {
     res.json(readDB()[RESOURCE] || []);
   });
@@ -77,6 +77,13 @@ export function registerApplications(app) {
     }
     res.json(item);
   });
+
+  // BULK DELETE MUST BE REGISTERED BEFORE THE `/:id` DELETE.
+  // Express matches in registration order; without this, the
+  // generic `:id` route would swallow "bulk" as a literal id
+  // and 404 with "Application not found."
+  bulkDeleteRouter(app, RESOURCE, ["status"]);
+
   app.delete(`/api/${RESOURCE}/:id`, requireAuth, (req, res) => {
     const db = readDB();
     const arr = db[RESOURCE] || [];
@@ -89,6 +96,4 @@ export function registerApplications(app) {
     writeDB(db);
     res.json({ success: true, data: removed });
   });
-
-  bulkDeleteRouter(app, RESOURCE, ["status"]);
 }

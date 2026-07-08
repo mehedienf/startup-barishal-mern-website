@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { apiFetch } from "../lib/api.js";
 
 /**
  * Fetches all three inbound data sources (applications, contacts, subscribers)
@@ -15,9 +16,9 @@ export function useAdminData() {
     setLoading(true);
     try {
       const [appRes, conRes, subRes] = await Promise.all([
-        fetch("/api/applications"),
-        fetch("/api/contacts"),
-        fetch("/api/subscribers"),
+        apiFetch("/api/applications"),
+        apiFetch("/api/contacts"),
+        apiFetch("/api/subscribers"),
       ]);
       if (appRes.ok) setApplications(await appRes.json());
       if (conRes.ok) setContacts(await conRes.json());

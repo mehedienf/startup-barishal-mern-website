@@ -95,10 +95,14 @@ export function registerPartners(app) {
     res.json({ success: true, data: removed });
   });
 
-  app.post(
-    `/api/${RESOURCE}/:id/logo`,
+  // Logo upload — registered under both POST (legacy) and PUT (admin
+  // client convention). Same handler, both methods, one chain.
+  const uploadLogo = [
     requireAuth,
-    partnerUpload.single("logo"),
+    // Field name is "photo" because the shared admin upload form
+// (ResourcePage.jsx) appends "photo" to its FormData; "logo" is
+// only the URL suffix.
+    partnerUpload.single("photo"),
     (req, res) => {
       const file = pickPartnerFile(req);
       if (!file) {
@@ -117,7 +121,9 @@ export function registerPartners(app) {
       writeDB(db);
       res.json({ success: true, data: { url } });
     },
-  );
+  ];
+  app.post(`/api/${RESOURCE}/:id/logo`, ...uploadLogo);
+  app.put(`/api/${RESOURCE}/:id/logo`,  ...uploadLogo);
 
   app.delete(`/api/${RESOURCE}/:id/logo`, requireAuth, (req, res) => {
     const db = readDB();

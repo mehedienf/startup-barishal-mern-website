@@ -104,8 +104,9 @@ export function registerCohorts(app) {
     res.json({ success: true, data: removed });
   });
 
-  app.post(
-    `/api/${RESOURCE}/:id/cover`,
+  // Cover image upload — registered under POST (legacy) and PUT (admin
+  // client convention). Same handler, both methods, one chain.
+  const uploadCover = [
     requireAuth,
     cohortUpload.single("cover"),
     (req, res) => {
@@ -124,7 +125,9 @@ export function registerCohorts(app) {
       writeDB(db);
       res.json({ success: true, data: { url } });
     },
-  );
+  ];
+  app.post(`/api/${RESOURCE}/:id/cover`, ...uploadCover);
+  app.put(`/api/${RESOURCE}/:id/cover`,  ...uploadCover);
 
   app.delete(`/api/${RESOURCE}/:id/cover`, requireAuth, (req, res) => {
     const db = readDB();

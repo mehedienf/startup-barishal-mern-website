@@ -33,6 +33,10 @@ export function registerMemberships(app) {
     res.status(201).json({ success: true, data: item });
   });
 
-  crudRouter(app, RESOURCE, PREFIX, ["fullName", "email"]);
+  // IMPORTANT: bulkDeleteRouter must be registered BEFORE crudRouter.
+// crudRouter's `DELETE /api/<res>/:id` would otherwise shadow
+// `DELETE /api/<res>/bulk` (Express matches in order; `:id` would
+// swallow "bulk" as a literal id and 404).
   bulkDeleteRouter(app, RESOURCE, ["status"]);
+  crudRouter(app, RESOURCE, PREFIX, ["fullName", "email"]);
 }

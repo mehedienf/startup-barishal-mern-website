@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { apiFetch, resolveAssetUrl } from "../lib/api.js";
 import {
   Plus,
   Pencil,
@@ -64,7 +65,7 @@ export default function ResourcePage({
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/${resource}`);
+      const res = await apiFetch(`/api/${resource}`);
       if (res.ok) setItems(await res.json());
     } finally {
       setLoading(false);
@@ -80,7 +81,7 @@ export default function ResourcePage({
 
   const handleDelete = async (id) => {
     if (!confirm("Delete this record? This cannot be undone.")) return;
-    const res = await fetch(`/api/${resource}/${id}`, { method: "DELETE" });
+    const res = await apiFetch(`/api/${resource}/${id}`, { method: "DELETE" });
     if (res.ok) {
       setItems((prev) => prev.filter((x) => x.id !== id));
       showToast("Record deleted.");
@@ -160,7 +161,7 @@ export default function ResourcePage({
                         <td className="p-4 align-top">
                           {item[coverUpload.fieldName] ? (
                             <img
-                              src={item[coverUpload.fieldName]}
+                              src={resolveAssetUrl(item[coverUpload.fieldName])}
                               alt="cover"
                               className="w-20 h-14 rounded-lg object-cover border border-slate-200 bg-slate-50"
                               onError={(e) => { e.currentTarget.style.display = "none"; }}
@@ -181,7 +182,7 @@ export default function ResourcePage({
                           <td className="p-4 align-top">
                             {item[photoUpload.fieldName] ? (
                               <img
-                                src={item[photoUpload.fieldName]}
+                                src={resolveAssetUrl(item[photoUpload.fieldName])}
                                 alt="photo"
                                 className={`${photoWrapClass} object-cover border border-slate-200 bg-slate-50`}
                                 onError={(e) => { e.currentTarget.style.display = "none"; }}
@@ -396,7 +397,7 @@ function ResourceForm({ resource, fields, initial, coverUpload, photoUpload, onC
       if (coverUpload && aspectOptions) {
         payload[aspectField] = coverRatio || aspectDefault;
       }
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -412,19 +413,25 @@ function ResourceForm({ resource, fields, initial, coverUpload, photoUpload, onC
       if (coverUpload && record && record.id) {
         // 1) Delete the existing cover first if user removed it.
         if (coverRemoved && initialCover && !coverFile) {
-          const dr = await fetch(`/api/${resource}/${record.id}/cover`, { method: "DELETE" });
+          const dr = await apiFetch(`/api/${resource}/${record.id}/cover`, { method: "DELETE" });
           const drBody = await dr.json().catch(() => ({}));
           if (!dr.ok) {
             onError(drBody.error || "Failed to remove cover image.");
             return;
           }
+          // DELETE response is the removed record — safe to overwrite.
           record = drBody.data || record;
         }
-        // 2) Upload the new cover file (replace).
+        // 2) Upload the new cover file (replace). The upload endpoint
+        //    only returns `{ url }`, NOT the full record. If we let it
+        //    overwrite `record`, the trailing refetch URL below would
+        //    become `/api/<resource>/undefined` and the list would never
+        //    pick up the new imageUrl. Keep the existing record (which
+        //    carries `.id`) and rely on the refetch for fresh data.
         if (coverFile) {
           const fd = new FormData();
           fd.append("cover", coverFile);
-          const cr = await fetch(`/api/${resource}/${record.id}/cover`, {
+          const cr = await apiFetch(`/api/${resource}/${record.id}/cover`, {
             method: "PUT",
             body: fd,
           });
@@ -433,11 +440,11 @@ function ResourceForm({ resource, fields, initial, coverUpload, photoUpload, onC
             onError(crBody.error || "Cover upload failed.");
             return;
           }
-          record = crBody.data || record;
+          // Don't overwrite — refetch will give us the authoritative record.
         }
         // 3) Re-fetch the authoritative record so the list shows the
         //    server's current coverImage URL (and updatedAt).
-        const refetch = await fetch(`/api/${resource}/${record.id}`);
+        const refetch = await apiFetch(`/api/${resource}/${record.id}`);
         if (refetch.ok) record = await refetch.json();
       }
 
@@ -445,18 +452,22 @@ function ResourceForm({ resource, fields, initial, coverUpload, photoUpload, onC
       // Mirrors the cover pipeline: explicit remove first, then upload.
       if (photoUpload && record && record.id) {
         if (photoRemoved && initialPhoto && !photoFile) {
-          const dr = await fetch(`/api/${resource}/${record.id}/${photoEndpoint}`, { method: "DELETE" });
+          const dr = await apiFetch(`/api/${resource}/${record.id}/${photoEndpoint}`, { method: "DELETE" });
           const drBody = await dr.json().catch(() => ({}));
           if (!dr.ok) {
             onError(drBody.error || "Failed to remove photo.");
             return;
           }
-          record = drBody.data || record;
+          // DELETE response shape varies — some routes return the full
+          // record, some return just `{ url }`. Only adopt it when it
+          // actually carries the id, otherwise keep `record` so the
+          // refetch below still has something to fetch.
+          if (drBody.data && drBody.data.id) record = drBody.data;
         }
         if (photoFile) {
           const fd = new FormData();
           fd.append("photo", photoFile);
-          const pr = await fetch(`/api/${resource}/${record.id}/${photoEndpoint}`, {
+          const pr = await apiFetch(`/api/${resource}/${record.id}/${photoEndpoint}`, {
             method: "PUT",
             body: fd,
           });
@@ -465,9 +476,11 @@ function ResourceForm({ resource, fields, initial, coverUpload, photoUpload, onC
             onError(prBody.error || "Photo upload failed.");
             return;
           }
-          record = prBody.data || record;
+          // PUT /photo|photo_url|image returns `{ url }` — do NOT
+          // overwrite `record`, or the trailing refetch URL becomes
+          // `/api/<resource>/undefined` and the list row never refreshes.
         }
-        const refetchPhoto = await fetch(`/api/${resource}/${record.id}`);
+        const refetchPhoto = await apiFetch(`/api/${resource}/${record.id}`);
         if (refetchPhoto.ok) record = await refetchPhoto.json();
       }
 
@@ -499,7 +512,7 @@ function ResourceForm({ resource, fields, initial, coverUpload, photoUpload, onC
                   <div className="w-28 h-20 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
                     {coverPreview ? (
                       <img
-                        src={coverPreview}
+                        src={resolveAssetUrl(coverPreview)}
                         alt="cover preview"
                         className="w-full h-full object-cover"
                       />
@@ -570,7 +583,7 @@ function ResourceForm({ resource, fields, initial, coverUpload, photoUpload, onC
                         >
                           {coverPreview && (
                             <img
-                              src={coverPreview}
+                              src={resolveAssetUrl(coverPreview)}
                               alt="ratio preview"
                               className="w-full h-full object-cover"
                             />
@@ -598,7 +611,7 @@ function ResourceForm({ resource, fields, initial, coverUpload, photoUpload, onC
                   <div className={`${pickerWrapClass} border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0`}>
                     {photoPreview ? (
                       <img
-                        src={photoPreview}
+                        src={resolveAssetUrl(photoPreview)}
                         alt="photo preview"
                         className="w-full h-full object-cover"
                       />

@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { apiFetch, resolveAssetUrl } from "../lib/api.js";
 import { Calendar, MapPin, ChevronLeft, ChevronRight, X, Loader2 } from "lucide-react";
 
 const FALLBACK_GALLERY = [
@@ -32,7 +33,7 @@ export default function EventsView({ onNavigate }) {
         let cancelled = false;
         async function load() {
             try {
-                const res = await fetch("/api/events");
+                const res = await apiFetch("/api/events");
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
                 if (!cancelled) {
@@ -151,7 +152,7 @@ export default function EventsView({ onNavigate }) {
                                         <div className="h-44 w-full overflow-hidden bg-slate-100 flex items-center justify-center">
                                             {event.coverImage ? (
                                                 <img
-                                                    src={event.coverImage}
+                                                    src={resolveAssetUrl(event.coverImage)}
                                                     alt={event.title}
                                                     className="w-full h-full object-cover"
                                                     referrerPolicy="no-referrer"
@@ -234,7 +235,7 @@ export default function EventsView({ onNavigate }) {
                                         }}
                                     >
                                         <img
-                                            src={image}
+                                            src={resolveAssetUrl(image)}
                                             alt={`${selectedEvent.title} - Photo ${index + 1}`}
                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                             referrerPolicy="no-referrer"
@@ -268,7 +269,7 @@ export default function EventsView({ onNavigate }) {
                         {/* Image Container */}
                         <div className="relative flex-1 bg-slate-100 overflow-hidden">
                             <img
-                                src={selectedImage.gallery[currentImageIndex]}
+                                src={resolveAssetUrl(selectedImage.gallery[currentImageIndex])}
                                 alt={`${selectedImage.title} - Photo ${currentImageIndex + 1}`}
                                 className="w-full h-full object-contain"
                             />

@@ -1,5 +1,6 @@
 import React from "react";
 import { ImageIcon } from "lucide-react";
+import { resolveAssetUrl } from "../lib/api.js";
 import ResourcePage from "./ResourcePage.jsx";
 
 /**
@@ -22,7 +23,7 @@ import ResourcePage from "./ResourcePage.jsx";
 const FIELDS = [
   {
     name: "title",
-    label: "Caption (internal)",
+    label: "Caption (Required)",
     type: "text",
     placeholder: "Optional label to recognise this image in the admin",
   },
@@ -61,7 +62,7 @@ export default function FeaturedImagesPage() {
         <div className="flex items-start gap-3">
           {item.imageUrl ? (
             <img
-              src={item.imageUrl}
+              src={resolveAssetUrl(item.imageUrl)}
               alt={item.altText || item.title || "hero"}
               className="w-24 h-16 rounded-lg object-cover border border-slate-200 bg-slate-50 shrink-0"
               onError={(e) => {

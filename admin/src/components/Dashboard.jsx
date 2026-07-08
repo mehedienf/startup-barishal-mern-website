@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiFetch } from "../lib/api.js";
 import {
   Database,
   Cpu,
@@ -28,7 +29,7 @@ export default function Dashboard() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/stats");
+      const res = await apiFetch("/api/stats");
       if (res.ok) setStats(await res.json());
     } finally {
       setLoading(false);

@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
+import { apiFetch } from "../lib/api.js";
 import {
   Users,
   Lightbulb,
@@ -68,7 +69,7 @@ export default function MembersView({ onNavigate }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/memberships");
+      const res = await apiFetch("/api/memberships");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setMembers(Array.isArray(data) ? data : []);

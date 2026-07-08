@@ -1,4 +1,6 @@
 import React from "react";
+import { User } from "lucide-react";
+import { resolveAssetUrl } from "../lib/api.js";
 import ResourcePage from "./ResourcePage.jsx";
 
 const FIELDS = [
@@ -35,7 +37,7 @@ export default function TeamPage() {
       renderItem={(item) => (
         <div className="flex items-start gap-3">
           {item.photoUrl ? (
-            <img src={item.photoUrl} alt={item.name} className="w-12 h-12 rounded-full object-cover border border-slate-200 bg-slate-50 shrink-0" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            <img src={resolveAssetUrl(item.photoUrl)} alt={item.name} className="w-12 h-12 rounded-full object-cover border border-slate-200 bg-slate-50 shrink-0" onError={(e) => { e.currentTarget.style.display = "none"; }} />
           ) : (
             <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-bold shrink-0">{(item.name || "?").charAt(0)}</div>
           )}

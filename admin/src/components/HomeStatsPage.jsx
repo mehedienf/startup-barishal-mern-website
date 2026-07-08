@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiFetch } from "../lib/api.js";
 import {
   Save,
   RotateCcw,
@@ -68,7 +69,7 @@ export default function HomeStatsPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/homeStats");
+      const res = await apiFetch("/api/homeStats");
       if (res.ok) {
         const data = await res.json();
         const next = {};
@@ -114,7 +115,7 @@ export default function HomeStatsPage() {
         const v = form[f.name];
         payload[f.name] = v === "" ? null : Number(v);
       });
-      const res = await fetch("/api/homeStats", {
+      const res = await apiFetch("/api/homeStats", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

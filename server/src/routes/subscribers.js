@@ -34,6 +34,9 @@ export function registerSubscribers(app) {
     res.status(201).json({ success: true, data: item });
   });
 
-  crudRouter(app, RESOURCE, PREFIX, ["email"]);
+  // BULK MUST COME FIRST: crudRouter's `/:id` DELETE would otherwise
+  // shadow `DELETE /api/subscribers/bulk` because Express matches in
+  // registration order.
   bulkDeleteRouter(app, RESOURCE, ["email"]);
+  crudRouter(app, RESOURCE, PREFIX, ["email"]);
 }

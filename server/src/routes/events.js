@@ -95,8 +95,9 @@ export function registerEvents(app) {
   });
 
   // Cover image — single file. Replaces `coverImage`.
-  app.post(
-    `/api/${RESOURCE}/:id/cover`,
+// Extracted so we can register it under both POST and PUT (the admin
+// client uses PUT to mean "replace existing"; the original API used POST).
+  const uploadCover = [
     requireAuth,
     eventUpload.single("cover"),
     (req, res) => {
@@ -113,7 +114,9 @@ export function registerEvents(app) {
       writeDB(db);
       res.json({ success: true, data: { url } });
     },
-  );
+  ];
+  app.post(`/api/${RESOURCE}/:id/cover`, ...uploadCover);
+  app.put(`/api/${RESOURCE}/:id/cover`, ...uploadCover);
 
   app.delete(`/api/${RESOURCE}/:id/cover`, requireAuth, (req, res) => {
     const db = readDB();
@@ -128,9 +131,9 @@ export function registerEvents(app) {
   });
 
   // Gallery — multi-file, fields `images` OR `gallery`. Adds to
-  // existing gallery; does not replace.
-  app.post(
-    `/api/${RESOURCE}/:id/gallery`,
+  // existing gallery; does not replace. Registered under both /gallery
+  // (legacy) and /images (admin client convention) for both POST and PUT.
+  const addGalleryImages = [
     requireAuth,
     eventUpload.array("images", 12),
     (req, res) => {
@@ -154,13 +157,18 @@ export function registerEvents(app) {
       writeDB(db);
       res.json({ success: true, data: { urls } });
     },
-  );
+  ];
+  app.post(`/api/${RESOURCE}/:id/gallery`, ...addGalleryImages);
+  app.post(`/api/${RESOURCE}/:id/images`,  ...addGalleryImages);
+  app.put(`/api/${RESOURCE}/:id/gallery`,  ...addGalleryImages);
+  app.put(`/api/${RESOURCE}/:id/images`,   ...addGalleryImages);
 
-  app.delete(
-    `/api/${RESOURCE}/:id/gallery`,
+  // Gallery remove — DELETE on both /gallery and /images, query/body
+  // shape is identical so the admin's "?url=" style Just Works.
+  const deleteGalleryImage = [
     requireAuth,
     (req, res) => {
-      const { url } = req.body || {};
+      const url = req.body?.url || req.query?.url;
       if (!url) {
         return res.status(400).json({ error: "url is required." });
       }
@@ -178,5 +186,7 @@ export function registerEvents(app) {
       writeDB(db);
       res.json({ success: true });
     },
-  );
+  ];
+  app.delete(`/api/${RESOURCE}/:id/gallery`, ...deleteGalleryImage);
+  app.delete(`/api/${RESOURCE}/:id/images`,  ...deleteGalleryImage);
 }

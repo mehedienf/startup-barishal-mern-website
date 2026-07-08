@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { apiFetch, resolveAssetUrl } from "../lib/api.js";
 import {
   Rocket,
   Sparkles,
@@ -42,7 +43,7 @@ export default function IncubationView() {
     let cancelled = false;
     async function load() {
       try {
-        const res = await fetch("/api/incubationPrograms/active");
+        const res = await apiFetch("/api/incubationPrograms/active");
         if (res.status === 404) {
           if (!cancelled) {
             setActiveCohort(null);
@@ -141,14 +142,10 @@ export default function IncubationView() {
     setLoading(true);
     setErrorMessage("");
     try {
-      const res = await fetch("/api/applications", {
+      const res = await apiFetch("/api/applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          programId: activeCohort?.id || null,
-          programName: activeCohort?.title || activeCohort?.name || null,
-        }),
+        body: JSON.stringify(formData),
       });
       const data = await res.json();
       if (res.ok) {
@@ -230,7 +227,7 @@ export default function IncubationView() {
                 }
               >
                 <img
-                  src={activeCohort.coverImage}
+                  src={resolveAssetUrl(activeCohort.coverImage)}
                   alt={`${activeCohort.title} cover`}
                   className="absolute inset-0 w-full h-full object-cover"
                   onError={(e) => { e.currentTarget.style.display = "none"; }}

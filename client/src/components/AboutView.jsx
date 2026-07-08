@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Rocket, Eye, Loader2, Mail, Phone, Linkedin, Facebook, Twitter, Sparkles, ArrowRight } from "lucide-react";
+import { apiFetch, resolveAssetUrl } from "../lib/api.js";
 
 export default function AboutView() {
   // Live team members from the MERN API
@@ -12,7 +13,7 @@ export default function AboutView() {
     let cancelled = false;
     async function loadTeam() {
       try {
-        const res = await fetch("/api/teamMembers");
+        const res = await apiFetch("/api/teamMembers");
         if (!cancelled && res.ok) {
           const data = await res.json();
           // sort by display order so admins can control the listing
@@ -33,7 +34,7 @@ export default function AboutView() {
     let cancelled = false;
     async function loadPartners() {
       try {
-        const res = await fetch("/api/partners");
+        const res = await apiFetch("/api/partners");
         if (!cancelled && res.ok) setPartners(await res.json());
       } catch (err) {
         console.error("Failed to load partners:", err);
@@ -111,7 +112,7 @@ export default function AboutView() {
                 <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-full overflow-hidden border-4 border-slate-100 shadow-md shrink-0 bg-slate-100">
                   {member.photoUrl ? (
                     <img
-                      src={member.photoUrl}
+                      src={resolveAssetUrl(member.photoUrl)}
                       alt={member.name}
                       className="w-full h-full object-cover object-[center_20%]"
                       referrerPolicy="no-referrer"
@@ -236,7 +237,7 @@ export default function AboutView() {
                     <img
                       alt={part.name}
                       className="max-h-20 max-w-full object-contain opacity-80 group-hover:opacity-100 transition-opacity"
-                      src={part.logoUrl}
+                      src={resolveAssetUrl(part.logoUrl)}
                       referrerPolicy="no-referrer"
                       onError={(e) => { e.currentTarget.style.display = "none"; }}
                     />

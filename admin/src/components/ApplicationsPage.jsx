@@ -5,11 +5,12 @@ import ApplicationAuditModal from "./ApplicationAuditModal.jsx";
 import BulkActionBar from "./BulkActionBar.jsx";
 import FilterDropdown from "./FilterDropdown.jsx";
 import Pagination from "./Pagination.jsx";
+import { apiFetch } from "../lib/api.js";
 
 const PAGE_SIZE = 50;
 
 async function postBulkDelete(resource, body) {
-  const res = await fetch(`/api/${resource}/bulk`, {
+  const res = await apiFetch(`/api/${resource}/bulk`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -133,7 +134,7 @@ export default function ApplicationsPage() {
 
   const handleStatus = async (nextStatus) => {
     if (!selected) return;
-    const res = await fetch(`/api/applications/${selected.id}`, {
+    const res = await apiFetch(`/api/applications/${selected.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: nextStatus, notes: note }),

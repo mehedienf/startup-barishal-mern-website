@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Lock, User, LogIn, AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
+import { apiFetch } from "../lib/api.js";
 
 /**
  * Admin sign-in page.
@@ -31,14 +32,10 @@ export default function Login({ onAuthenticated }) {
     }
     setSubmitting(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await apiFetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          username: username.trim(),
-          password,
-        }),
+        body: JSON.stringify({ username: username.trim(), password }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

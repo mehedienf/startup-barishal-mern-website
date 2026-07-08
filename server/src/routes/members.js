@@ -85,8 +85,9 @@ export function registerMembers(app) {
     res.json({ success: true, data: removed });
   });
 
-  app.post(
-    `/api/${RESOURCE}/:id/photo`,
+  // Photo upload — registered under POST (legacy) and PUT (admin
+  // client convention). Same handler, both methods, one chain.
+  const uploadPhoto = [
     requireAuth,
     teamUpload.single("photo"),
     (req, res) => {
@@ -107,7 +108,9 @@ export function registerMembers(app) {
       writeDB(db);
       res.json({ success: true, data: { url } });
     },
-  );
+  ];
+  app.post(`/api/${RESOURCE}/:id/photo`, ...uploadPhoto);
+  app.put(`/api/${RESOURCE}/:id/photo`,  ...uploadPhoto);
 
   app.delete(`/api/${RESOURCE}/:id/photo`, requireAuth, (req, res) => {
     const db = readDB();

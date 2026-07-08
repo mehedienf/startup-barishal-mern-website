@@ -11,6 +11,7 @@ import {
 import Sidebar from "./components/Sidebar";
 import Login from "./components/Login";
 import { Outlet } from "react-router-dom";
+import { apiFetch } from "./lib/api.js";
 
 // Public site URL — where the "Public Site" link in the top bar points.
 // Vite exposes `import.meta.env.VITE_*` at build time. The server has the
@@ -39,9 +40,7 @@ export default function App() {
 
   const checkSession = useCallback(async () => {
     try {
-      const res = await fetch("/api/auth/me", {
-        credentials: "include",
-      });
+      const res = await apiFetch("/api/auth/me");
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
         setAuthState({ status: "authed", username: data?.username || "admin" });
@@ -63,10 +62,7 @@ export default function App() {
 
   const handleSignOut = useCallback(async () => {
     try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      await apiFetch("/api/auth/logout", { method: "POST" });
     } catch {
       // Even if the network call fails, we still flip the UI to the login
       // screen so the user can re-authenticate.

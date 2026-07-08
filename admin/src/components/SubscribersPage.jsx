@@ -4,6 +4,7 @@ import { useAdminData } from "../hooks/useAdminData.js";
 import BulkActionBar from "./BulkActionBar.jsx";
 import FilterDropdown from "./FilterDropdown.jsx";
 import Pagination from "./Pagination.jsx";
+import { apiFetch } from "../lib/api.js";
 
 const PAGE_SIZE = 50;
 
@@ -12,7 +13,7 @@ const PAGE_SIZE = 50;
  * Throws on non-OK so the BulkActionBar can show the error message.
  */
 async function postBulkDelete(resource, body) {
-  const res = await fetch(`/api/${resource}/bulk`, {
+  const res = await apiFetch(`/api/${resource}/bulk`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

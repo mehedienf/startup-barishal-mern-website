@@ -1,5 +1,6 @@
 import React from "react";
 import { Handshake } from "lucide-react";
+import { resolveAssetUrl } from "../lib/api.js";
 import ResourcePage from "./ResourcePage.jsx";
 
 const FIELDS = [
@@ -29,7 +30,7 @@ export default function PartnersPage() {
       renderItem={(item) => (
         <div className="flex items-start gap-3">
           {item.logoUrl ? (
-            <img src={item.logoUrl} alt={item.name} className="w-12 h-12 rounded-lg object-contain border border-slate-200 bg-slate-50 shrink-0" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            <img src={resolveAssetUrl(item.logoUrl)} alt={item.name} className="w-12 h-12 rounded-lg object-contain border border-slate-200 bg-slate-50 shrink-0" onError={(e) => { e.currentTarget.style.display = "none"; }} />
           ) : (
             <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
               <Handshake className="w-5 h-5" />

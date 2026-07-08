@@ -4,6 +4,7 @@ import BulkActionBar from "./BulkActionBar.jsx";
 import FilterDropdown from "./FilterDropdown.jsx";
 import Pagination from "./Pagination.jsx";
 import MembershipAuditModal from "./MembershipAuditModal.jsx";
+import { apiFetch } from "../lib/api.js";
 
 const PAGE_SIZE = 50;
 
@@ -37,7 +38,7 @@ function formatSubmittedTime(iso) {
 }
 
 async function postBulkDelete(body) {
-  const res = await fetch("/api/memberships/bulk", {
+  const res = await apiFetch("/api/memberships/bulk", {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -67,7 +68,7 @@ export default function MembershipsPage() {
   const refresh = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/memberships");
+      const res = await apiFetch("/api/memberships");
       if (res.ok) setMemberships(await res.json());
     } finally {
       setLoading(false);
@@ -128,7 +129,7 @@ export default function MembershipsPage() {
 
   const handleStatus = async (nextStatus) => {
     if (!selected) return;
-    const res = await fetch(`/api/memberships/${selected.id}`, {
+    const res = await apiFetch(`/api/memberships/${selected.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: nextStatus, notes: note }),

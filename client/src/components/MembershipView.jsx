@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { apiFetch } from "../lib/api.js";
 import {
   Rocket,
   Send,
@@ -61,7 +62,7 @@ export default function MembershipView() {
     setErrorMsg("");
     setSuccessData(null);
     try {
-      const res = await fetch("/api/memberships", {
+      const res = await apiFetch("/api/memberships", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

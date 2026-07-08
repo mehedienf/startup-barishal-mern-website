@@ -21,27 +21,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
-
-// API origin for the admin/upload server. Hero images are served from
-// /uploads/featured on that origin, so relative URLs from /api/featured need
-// to be rewritten before being assigned to <img src>. We try the env value
-// first, then fall back to the local dev port.
-const API_ORIGIN =
-  (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_ORIGIN) ||
-  "http://localhost:3000";
-
-/**
- * Convert a featured `imageUrl` into a fully-qualified URL the <img> tag can
- * actually fetch. Server returns paths like "/uploads/featured/<id>/<file>"
- * which resolve against the API host, not the client host, so we prefix
- * them with API_ORIGIN. Already-absolute URLs (https://...) pass through.
- */
-function resolveFeaturedUrl(url) {
-  if (!url) return "";
-  if (/^https?:\/\//i.test(url)) return url;
-  if (url.startsWith("/")) return API_ORIGIN + url;
-  return API_ORIGIN + "/" + url;
-}
+import { apiFetch, resolveAssetUrl } from "../lib/api.js";
 
 // Bundled fallback shown only when /api/featured returns nothing usable
 // (e.g. dev server offline, no admin images uploaded yet). Uses Unsplash
@@ -96,7 +76,7 @@ export default function HomeView({ onNavigate }) {
   const [activeCohort, setActiveCohort] = useState(null);
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/incubationPrograms/active")
+    apiFetch("/api/incubationPrograms/active")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!cancelled) setActiveCohort(data && data.id ? data : null);
@@ -124,7 +104,7 @@ export default function HomeView({ onNavigate }) {
     let cancelled = false;
     async function loadFeatured() {
       try {
-        const res = await fetch("/api/featured");
+        const res = await apiFetch("/api/featured");
         if (!res.ok) return;
         const data = await res.json();
         if (cancelled) return;
@@ -135,7 +115,7 @@ export default function HomeView({ onNavigate }) {
           const slides = data
             .filter((f) => f && f.imageUrl && f.active !== false)
             .map((f) => ({
-              src: resolveFeaturedUrl(f.imageUrl),
+              src: resolveAssetUrl(f.imageUrl),
               alt: f.altText || f.title || "",
             }))
             .filter((s) => s.src);
@@ -176,7 +156,7 @@ export default function HomeView({ onNavigate }) {
     let cancelled = false;
     async function loadPartners() {
       try {
-        const res = await fetch("/api/partners");
+        const res = await apiFetch("/api/partners");
         if (res.ok && !cancelled) setPartners(await res.json());
       } catch (err) {
         console.error("Failed to load partners:", err);
@@ -189,7 +169,7 @@ export default function HomeView({ onNavigate }) {
   useEffect(() => {
     async function loadTeam() {
       try {
-        const res = await fetch("/api/teamMembers");
+        const res = await apiFetch("/api/teamMembers");
         if (res.ok) {
           const data = await res.json();
           const sorted = [...data].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -207,7 +187,7 @@ export default function HomeView({ onNavigate }) {
   useEffect(() => {
     async function loadEvents() {
       try {
-        const res = await fetch("/api/events");
+        const res = await apiFetch("/api/events");
         if (res.ok) {
           const data = await res.json();
           // Pick the four most recent upcoming + past events for the preview grid
@@ -259,22 +239,37 @@ export default function HomeView({ onNavigate }) {
   const animatedInvestors = useCountUp(stats.investorsOnboarded, shouldAnimateStats);
   const animatedCohorts = useCountUp(stats.cohortsCompleted, shouldAnimateStats);
 
-  // Fetch live stats from MERN Express API
+  // Fetch live stats from the MERN Express API.
+  //
+  // Two endpoints, two purposes:
+  //   - `/api/homeStats`  — admin-editable marketing numbers (events,
+  //     startupsMentored, investorsOnboarded, cohortsCompleted). The
+  //     admin's "Home Page Stats" page writes here.
+  //   - `/api/stats`      — auto-derived counts from the DB (contacts,
+  //     subscribers). Nothing in the admin UI overrides these.
+  //
+  // Fetching them in parallel lets each endpoint fail independently —
+  // if `/api/homeStats` is down, the contact/subscriber counts still
+  // appear, and vice versa.
   useEffect(() => {
     async function loadStats() {
       try {
-        const res = await fetch("/api/stats");
-        if (res.ok) {
-          const data = await res.json();
-          setStats({
-            cohortsCompleted: data.cohortsCompleted || 4,
-            eventsCount: data.eventsCount || 32,
-            startupsMentored: data.startupsMentored || 15,
-            investorsOnboarded: data.investorsOnboarded || 8,
-            contactsCount: data.currentContactsCount || 2,
-            subscribersCount: data.currentSubscribersCount || 2,
-          });
-        }
+        const [homeRes, sysRes] = await Promise.all([
+          apiFetch("/api/homeStats"),
+          apiFetch("/api/stats"),
+        ]);
+        const home = homeRes.ok ? await homeRes.json() : {};
+        const sys = sysRes.ok ? await sysRes.json() : {};
+        setStats({
+          // Marketing overrides take priority; fall back to the hard-
+          // coded defaults if the admin never set them.
+          eventsCount: home.eventsCount ?? 32,
+          startupsMentored: home.startupsMentored ?? 15,
+          investorsOnboarded: home.investorsOnboarded ?? 8,
+          cohortsCompleted: home.cohortsCompleted ?? 4,
+          contactsCount: sys.currentContactsCount ?? 2,
+          subscribersCount: sys.currentSubscribersCount ?? 2,
+        });
       } catch (err) {
         console.error("Failed to load server stats, using fallback preset:", err);
       } finally {
@@ -567,7 +562,7 @@ export default function HomeView({ onNavigate }) {
                 <div key={event.id} className="bg-white rounded-[1.8rem] border border-slate-200/80 p-5 flex flex-col gap-5 shadow-sm hover:shadow-md transition-shadow group">
                   <div className="w-full h-40 shrink-0 rounded-2xl overflow-hidden bg-slate-100">
                     <img
-                      src={event.coverImage || "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=600&q=80"}
+                      src={resolveAssetUrl(event.coverImage) || "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=600&q=80"}
                       alt={event.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       referrerPolicy="no-referrer"
@@ -675,7 +670,7 @@ export default function HomeView({ onNavigate }) {
                       <img
                         alt={part.name}
                         className="max-h-12 max-w-full object-contain opacity-70 hover:opacity-100 transition-opacity"
-                        src={part.logoUrl}
+                        src={resolveAssetUrl(part.logoUrl)}
                         referrerPolicy="no-referrer"
                       />
                     </a>
@@ -816,7 +811,7 @@ function TeamAvatarRow({ team }) {
               >
                 {m.photoUrl ? (
                   <img
-                    src={m.photoUrl}
+                    src={resolveAssetUrl(m.photoUrl)}
                     alt={m.name}
                     className="w-full h-full rounded-full object-cover"
                     referrerPolicy="no-referrer"
@@ -935,7 +930,7 @@ function TeamMemberCard({ member, compact = false }) {
     >
       {member.photoUrl ? (
         <img
-          src={member.photoUrl}
+          src={resolveAssetUrl(member.photoUrl)}
           alt={member.name}
           className={`rounded-full object-cover border-4 border-white shadow-md ${
             compact ? "w-20 h-20 mb-3" : "w-36 h-36 mb-5"

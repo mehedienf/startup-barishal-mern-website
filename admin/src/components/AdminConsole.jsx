@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Database, 
-  Users, 
-  Mail, 
-  MessageSquare, 
-  CheckCircle, 
-  XSquare, 
-  Eye, 
-  Cpu, 
-  BookOpen, 
+import {
+  Database,
+  Users,
+  Mail,
+  MessageSquare,
+  CheckCircle,
+  XSquare,
+  Eye,
+  Cpu,
+  BookOpen,
   Search,
   CheckCircle2,
   XCircle,
@@ -16,6 +16,7 @@ import {
   ArrowRightCircle,
   FileText
 } from "lucide-react";
+import { apiFetch } from "../lib/api.js";
 
 export default function AdminConsole() {
   const [applications, setApplications] = useState([]);
@@ -32,9 +33,9 @@ export default function AdminConsole() {
     setLoading(true);
     try {
       const [appRes, conRes, subRes] = await Promise.all([
-        fetch("/api/applications"),
-        fetch("/api/contacts"),
-        fetch("/api/subscribers")
+        apiFetch("/api/applications"),
+        apiFetch("/api/contacts"),
+        apiFetch("/api/subscribers")
       ]);
       if (appRes.ok) setApplications(await appRes.json());
       if (conRes.ok) setContacts(await conRes.json());
@@ -52,7 +53,7 @@ export default function AdminConsole() {
 
   const handleUpdateStatus = async (id, nextStatus) => {
     try {
-      const res = await fetch(`/api/applications/${id}`, {
+      const res = await apiFetch(`/api/applications/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: nextStatus, notes: reviewNote })

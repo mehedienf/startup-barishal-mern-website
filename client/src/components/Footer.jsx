@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { apiFetch } from "../lib/api.js";
 import { Mail, CheckCircle2, ArrowRight, Facebook, Instagram, Linkedin, Youtube } from "lucide-react";
 import logoWatermark from "../assets/startup-barishal-logo-2.png";
 import logoPrimary from "../assets/startupbarishal-logo.png";
@@ -26,7 +27,7 @@ export default function Footer({ onNavigate }) {
     setSubmitting(true);
     setErrorStatus("");
     try {
-      const res = await fetch("/api/newsletter", {
+      const res = await apiFetch("/api/newsletter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
