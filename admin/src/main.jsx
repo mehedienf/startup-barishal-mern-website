@@ -15,10 +15,11 @@ import FeaturedImagesPage from './components/FeaturedImagesPage.jsx';
 import HomeStatsPage from './components/HomeStatsPage.jsx';
 import './index.css';
 
-// `basename` tells react-router that the entire admin SPA is mounted under
-// /admin/ on the deployed host. Vite's `base: '/admin/'` only rewrites asset
-// URLs; it does NOT affect router paths. Without this the router would try
-// to match `/team`, `/events`, etc. at the domain root and render nothing.
+// No `basename` — the admin SPA is hosted at the subdomain root (e.g.
+// https://admin.site.com/), so routes live at `/`, `/team`, `/events`, etc.
+// `import.meta.env.BASE_URL` reflects Vite's `base` config (which we set
+// to `/`), so this also keeps the router matching the served URL whether
+// the bundle is loaded from `/` or any sub-path during local dev.
 const router = createBrowserRouter(
   [
     {
@@ -42,7 +43,7 @@ const router = createBrowserRouter(
       ],
     },
   ],
-  { basename: import.meta.env.BASE_URL.replace(/\/$/, '') || '/admin' },
+  { basename: import.meta.env.BASE_URL.replace(/\/$/, '') || '/' },
 );
 
 createRoot(document.getElementById('root')).render(

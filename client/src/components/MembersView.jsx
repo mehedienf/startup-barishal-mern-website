@@ -68,7 +68,7 @@ export default function MembersView({ onNavigate }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/members");
+      const res = await fetch("/api/memberships");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setMembers(Array.isArray(data) ? data : []);
@@ -263,6 +263,28 @@ export default function MembersView({ onNavigate }) {
                         const interestTags = (m.interests || [])
                           .map((id) => INTEREST_META[id])
                           .filter(Boolean);
+                        // Derive avatar initials from fullName when the API
+                        // doesn't ship a precomputed `initials` field.
+                        const initials =
+                          (m.initials && String(m.initials).trim()) ||
+                          (m.fullName || "")
+                            .split(/\s+/)
+                            .filter(Boolean)
+                            .slice(0, 2)
+                            .map((part) => part[0])
+                            .join("")
+                            .toUpperCase() ||
+                          "?";
+                        // Joined date — prefer `joinedAt`, fall back to
+                        // `createdAt` which is what the API actually returns.
+                        const joinedRaw = m.joinedAt || m.createdAt;
+                        const joinedDisplay = joinedRaw
+                          ? new Date(joinedRaw).toLocaleDateString(undefined, {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })
+                          : "—";
                         return (
                           <tr
                             key={m.id}
@@ -271,7 +293,7 @@ export default function MembersView({ onNavigate }) {
                             <td className="p-4 align-top">
                               <div className="flex items-center gap-3 min-w-0">
                                 <div className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-primary-orange/15 to-secondary-blue/20 text-primary-orange flex items-center justify-center font-extrabold text-sm border border-white shadow-sm">
-                                  {m.initials}
+                                  {initials}
                                 </div>
                                 <div className="min-w-0">
                                   <p className="font-bold text-secondary-blue text-sm leading-tight truncate">
@@ -323,7 +345,7 @@ export default function MembersView({ onNavigate }) {
                             <td className="p-4 align-top">
                               <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600">
                                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                                {m.joinedAt || "—"}
+                                {joinedDisplay}
                               </span>
                             </td>
                           </tr>

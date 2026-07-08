@@ -1,0 +1,39 @@
+# SPA fallback for the public site.
+#
+# Without this, Apache returns "404 Not Found" for any client-side route
+# (e.g. /about, /events, /membership) when a user refreshes the page or
+# follows a deep link, because there's no /about/index.html on disk.
+#
+# The rule says: if the requested path is NOT a real file and NOT a real
+# directory, fall back to index.html so the React Router inside the bundle
+# can handle the route on its own. Real files (CSS/JS/PNG) still go
+# straight to Apache's static file handler with long cache headers below.
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Don't rewrite real files or directories — they're served as-is.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Everything else (SPA deep links like /about, /events/123, /membership)
+  # gets rewritten to /index.html. The React app then re-reads the URL
+  # and renders the matching view client-side.
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Long-cache hashed assets (Vite emits names like index-abc123.js).
+# HTML stays short so deploys are picked up immediately.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|png|jpg|jpeg|gif|svg|woff2?)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# Optional: pretty 404 page handed back to the SPA so users see the
+# public-site layout instead of Apache's default error page.
+ErrorDocument 404 /index.html

@@ -12,6 +12,12 @@ import Sidebar from "./components/Sidebar";
 import Login from "./components/Login";
 import { Outlet } from "react-router-dom";
 
+// Public site URL — where the "Public Site" link in the top bar points.
+// Vite exposes `import.meta.env.VITE_*` at build time. The server has the
+// matching runtime variable `PUBLIC_SITE_URL` in `server/.env.example`.
+const PUBLIC_SITE_URL =
+  import.meta.env.VITE_PUBLIC_SITE_URL || "http://localhost:5173";
+
 /**
  * Auth gate.
  *
@@ -128,7 +134,7 @@ export default function App() {
                 Live
               </span>
               <a
-                href="http://localhost:5173"
+                href={PUBLIC_SITE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-sm font-medium bg-white/10 hover:bg-white/15 border border-white/15 px-3 py-1.5 rounded-lg transition-colors"
