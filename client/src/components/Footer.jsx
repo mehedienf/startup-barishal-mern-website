@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Mail, CheckCircle2, ArrowRight, Facebook, Instagram, Linkedin, Youtube } from "lucide-react";
 import logoWatermark from "../assets/startup-barishal-logo-2.png";
+import logoPrimary from "../assets/startupbarishal-logo.png";
 
 const SOCIAL_LINKS = [
   { icon: Facebook, label: "Facebook", href: "https://facebook.com/startupbarishal" },
@@ -69,7 +70,7 @@ export default function Footer({ onNavigate }) {
               <img
                 alt="Startup Barishal Logo"
                 className="h-10 w-auto max-w-[140px] object-contain drop-shadow-sm"
-                src="/src/assets/startupbarishal-logo.png"
+                src={logoPrimary}
               />
             </div>
             <p className="text-sm text-[#5a4136]/80 max-w-[280px] leading-relaxed mb-4">

@@ -128,7 +128,31 @@ function numOrZero(v) {
 }
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
 const ADMIN_ORIGIN = process.env.ADMIN_ORIGIN || "http://localhost:5174";
+// Extra origins allowed through CORS (comma-separated). Lets the deployed
+// admin at e.g. https://startupbarishal.olivosoft.com reach the API when
+// the API itself is hosted on a separate origin or behind a reverse proxy.
+const EXTRA_ORIGINS = (process.env.EXTRA_ORIGINS || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+const ALLOWED_ORIGINS = [
+  CLIENT_ORIGIN,
+  ADMIN_ORIGIN,
+  ...EXTRA_ORIGINS,
+  // Production hosts where the admin is served from the same origin as the
+  // API (common cPanel setup: static + API on the same Apache/Passenger
+  // process). Listed explicitly so the browser doesn't reject the cookie.
+  "https://startupbarishal.olivosoft.com",
+  "http://startupbarishal.olivosoft.com",
+];
 const DB_FILE = path.join(__dirname, "data", "db.json");
+const REPO_ROOT = path.join(__dirname, "..");
+// `DIST_DIR` is the combined production build folder produced by
+// `npm run collect:dist`. When present, the server can host both the public
+// site (/) and the admin console (/admin) on the same origin as the API,
+// which keeps the auth cookie same-site and removes the CORS / cross-origin
+// dance on a cPanel deploy.
+const DIST_DIR = process.env.DIST_DIR || path.join(REPO_ROOT, "dist");
 const UPLOADS_DIR = path.join(__dirname, "..", "admin", "src", "assets", "partners");
 const SERVER_UPLOADS_DIR = path.join(__dirname, "uploads");
 const EVENT_UPLOADS_DIR = path.join(SERVER_UPLOADS_DIR, "events");
@@ -288,7 +312,12 @@ const app = express();
 
 app.use(
   cors({
-    origin: [CLIENT_ORIGIN, ADMIN_ORIGIN],
+    origin: (origin, cb) => {
+      // Same-origin / curl / server-to-server (no Origin header) is fine.
+      if (!origin) return cb(null, true);
+      if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+      return cb(new Error(`CORS: origin ${origin} not allowed`));
+    },
     credentials: true,
   })
 );
@@ -1579,13 +1608,80 @@ app.delete("/api/featured/:id/image", requireAuth, (req, res) => {
   res.json({ success: true, data: arr[idx] });
 });
 
+/**
+ * Static hosting for the production SPA build (created by `npm run build`
+ * at the repo root). When `dist/` exists, the server serves the public
+ * site from `/` and the admin console from `/admin`, falling back to the
+ * appropriate `index.html` for client-side routes so react-router's
+ * `basename="/admin"` doesn't break on deep links.
+ *
+ * This is what makes the production deploy behave identically to the dev
+ * setup (cookie same-site, no CORS, same origin for static + API).
+ */
+(function mountStaticApps() {
+  if (!fs.existsSync(DIST_DIR)) return;
+
+  const publicDir = path.join(DIST_DIR);
+  const adminDir = path.join(DIST_DIR, "admin");
+  const uploadsPublicDir = path.join(SERVER_UPLOADS_DIR);
+
+  // Long cache for hashed assets, short cache for HTML so deploys are seen.
+  const oneYear = "public, max-age=31536000, immutable";
+  const noCache = "no-cache, must-revalidate";
+
+  app.use(
+    "/assets",
+    express.static(path.join(publicDir, "assets"), {
+      maxAge: oneYear,
+      setHeaders: (res) => res.setHeader("Cache-Control", oneYear),
+    }),
+  );
+  if (fs.existsSync(path.join(adminDir, "assets"))) {
+    app.use(
+      "/admin/assets",
+      express.static(path.join(adminDir, "assets"), {
+        maxAge: oneYear,
+        setHeaders: (res) => res.setHeader("Cache-Control", oneYear),
+      }),
+    );
+  }
+  // Uploaded media (event/team/program/partner/featured photos). Cached
+  // for a week — these get overwritten in place when re-uploaded.
+  if (fs.existsSync(uploadsPublicDir)) {
+    app.use(
+      "/uploads",
+      express.static(uploadsPublicDir, {
+        maxAge: "public, max-age=604800",
+      }),
+    );
+  }
+
+  // Public SPA fallback for any non-API GET.
+  app.get(/^\/(?!api\/|uploads\/|admin\/).*/, (_req, res, next) => {
+    const indexPath = path.join(publicDir, "index.html");
+    if (!fs.existsSync(indexPath)) return next();
+    res.setHeader("Cache-Control", noCache);
+    res.sendFile(indexPath);
+  });
+
+  // Admin SPA fallback for any /admin/* route (deep links like /admin/team).
+  app.get(/^\/admin(\/.*)?$/, (_req, res, next) => {
+    const indexPath = path.join(adminDir, "index.html");
+    if (!fs.existsSync(indexPath)) return next();
+    res.setHeader("Cache-Control", noCache);
+    res.sendFile(indexPath);
+  });
+
+  console.log(`[Startup Barishal API] serving SPA from ${DIST_DIR}`);
+})();
+
 app.listen(PORT, "0.0.0.0", () => {
   // Touch the DB once on boot so the admin user is seeded and the
   // default credentials appear in the log on first run.
   const db = readDB();
   const userCount = (db.adminUsers || []).length;
   console.log(`[Startup Barishal API] listening on http://localhost:${PORT}`);
-  console.log(`  CORS: ${CLIENT_ORIGIN}, ${ADMIN_ORIGIN}`);
+  console.log(`  CORS allowed origins: ${ALLOWED_ORIGINS.join(", ")}`);
   console.log(`  Admin users in DB: ${userCount}`);
   if (userCount > 0) {
     console.log(

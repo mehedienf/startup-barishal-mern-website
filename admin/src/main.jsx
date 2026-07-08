@@ -15,25 +15,35 @@ import FeaturedImagesPage from './components/FeaturedImagesPage.jsx';
 import HomeStatsPage from './components/HomeStatsPage.jsx';
 import './index.css';
 
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <App />,
-    children: [
-      { index: true, element: <Dashboard /> },
-      { path: 'team', element: <TeamPage /> },
-      { path: 'events', element: <EventsPage /> },
-      { path: 'programs', element: <ProgramsPage /> },
-      { path: 'contacts', element: <ContactsPage /> },
-      { path: 'applications', element: <ApplicationsPage /> },
-      { path: 'subscribers', element: <SubscribersPage /> },
-      { path: 'partners', element: <PartnersPage /> },
-      { path: 'memberships', element: <MembershipsPage /> },
-      { path: 'featured', element: <FeaturedImagesPage /> },
-      { path: 'home-stats', element: <HomeStatsPage /> },
-    ],
-  },
-]);
+// `basename` tells react-router that the entire admin SPA is mounted under
+// /admin/ on the deployed host. Vite's `base: '/admin/'` only rewrites asset
+// URLs; it does NOT affect router paths. Without this the router would try
+// to match `/team`, `/events`, etc. at the domain root and render nothing.
+const router = createBrowserRouter(
+  [
+    {
+      path: '/',
+      element: <App />,
+      children: [
+        { index: true, element: <Dashboard /> },
+        { path: 'team', element: <TeamPage /> },
+        { path: 'events', element: <EventsPage /> },
+        { path: 'programs', element: <ProgramsPage /> },
+        { path: 'contacts', element: <ContactsPage /> },
+        { path: 'applications', element: <ApplicationsPage /> },
+        { path: 'subscribers', element: <SubscribersPage /> },
+        { path: 'partners', element: <PartnersPage /> },
+        { path: 'memberships', element: <MembershipsPage /> },
+        { path: 'featured', element: <FeaturedImagesPage /> },
+        { path: 'home-stats', element: <HomeStatsPage /> },
+        // Catch-all so an unmatched admin URL still renders the chrome
+        // instead of leaving a blank page.
+        { path: '*', element: <Dashboard /> },
+      ],
+    },
+  ],
+  { basename: import.meta.env.BASE_URL.replace(/\/$/, '') || '/admin' },
+);
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
