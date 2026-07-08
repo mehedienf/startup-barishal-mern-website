@@ -22,18 +22,32 @@ import {
   ChevronRight
 } from "lucide-react";
 
-import img1 from "../assets/img1.jpg";
-import img2 from "../assets/img2.jpg";
+// API origin for the admin/upload server. Hero images are served from
+// /uploads/featured on that origin, so relative URLs from /api/featured need
+// to be rewritten before being assigned to <img src>. We try the env value
+// first, then fall back to the local dev port.
+const API_ORIGIN =
+  (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_ORIGIN) ||
+  "http://localhost:3000";
 
+/**
+ * Convert a featured `imageUrl` into a fully-qualified URL the <img> tag can
+ * actually fetch. Server returns paths like "/uploads/featured/<id>/<file>"
+ * which resolve against the API host, not the client host, so we prefix
+ * them with API_ORIGIN. Already-absolute URLs (https://...) pass through.
+ */
+function resolveFeaturedUrl(url) {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) return url;
+  if (url.startsWith("/")) return API_ORIGIN + url;
+  return API_ORIGIN + "/" + url;
+}
+
+// Bundled fallback shown only when /api/featured returns nothing usable
+// (e.g. dev server offline, no admin images uploaded yet). Uses Unsplash
+// URLs that don't depend on local assets — keeping the site image-free of
+// missing-file errors.
 const FALLBACK_HERO_IMAGES = [
-  {
-    src: img1,
-    alt: "A diverse team of young startup founders collaborating together on notebooks and software kits around a modern co-working desk"
-  },
-  {
-    src: img2,
-    alt: "Diverse tech team brainstorming ideas and drawing workflows on wireframes"
-  },
   {
     src: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1000&q=80",
     alt: "Developers and designers discussing interface models and business strategies"
@@ -41,7 +55,11 @@ const FALLBACK_HERO_IMAGES = [
   {
     src: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1000&q=80",
     alt: "Group workshop mentoring session for budding local innovators"
-  }
+  },
+  {
+    src: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1000&q=80",
+    alt: "A diverse team of young startup founders collaborating together around a modern co-working desk"
+  },
 ];
 
 function useCountUp(target, start, duration = 1800) {
@@ -108,9 +126,16 @@ export default function HomeView({ onNavigate }) {
         const data = await res.json();
         if (cancelled) return;
         if (Array.isArray(data) && data.length) {
+          // Only show `active: true` records (admin can deactivate without
+          // deleting). Rewrite the relative /uploads path to the API origin
+          // so the <img> element actually fetches the file.
           const slides = data
-            .filter((f) => f && f.imageUrl)
-            .map((f) => ({ src: f.imageUrl, alt: f.altText || f.title || "" }));
+            .filter((f) => f && f.imageUrl && f.active !== false)
+            .map((f) => ({
+              src: resolveFeaturedUrl(f.imageUrl),
+              alt: f.altText || f.title || "",
+            }))
+            .filter((s) => s.src);
           if (slides.length) setHeroSlides(slides);
         }
       } catch (err) {

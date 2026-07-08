@@ -167,39 +167,58 @@ export default function AboutView() {
 
       </div>
 
-      {/* Partners Grid — full-bleed strip */}
-      <section className="text-center py-14 bg-slate-50 border-y border-slate-200/60 w-full overflow-hidden" id="partners">
-        <h2 className="text-2xl font-bold mb-3 text-secondary-blue px-5 md:px-[64px]">Our Ecosystem Partners</h2>
-        <p className="text-slate-500 text-xs uppercase tracking-widest font-semibold mb-8 px-5 md:px-[64px]">Aligned for Local Growth</p>
+      {/* Partners Grid — responsive card grid */}
+      <section className="py-14 bg-slate-50 border-y border-slate-200/60 w-full" id="partners">
+        <div className="text-center mb-10 px-5 md:px-[64px]">
+          <h2 className="text-2xl md:text-3xl font-bold mb-3 text-secondary-blue">Our Ecosystem Partners</h2>
+          <p className="text-slate-500 text-xs uppercase tracking-widest font-semibold">Aligned for Local Growth</p>
+        </div>
 
         {partners.length === 0 ? (
-          <p className="text-sm text-slate-400 italic">Partner logos will appear here once added from the admin panel.</p>
+          <p className="text-center text-sm text-slate-400 italic px-5 md:px-[64px]">
+            Partner logos will appear here once added from the admin panel.
+          </p>
         ) : (
-          /* Infinite sliding container with beautiful fading gradients */
-          <div className="relative w-full overflow-hidden hover-pause before:absolute before:left-0 before:top-0 before:z-10 before:h-full before:w-12 sm:before:w-28 before:bg-gradient-to-r before:from-slate-50 before:to-transparent after:absolute after:right-0 after:top-0 after:z-10 after:h-full after:w-12 sm:after:w-28 after:bg-gradient-to-l after:from-slate-50 after:to-transparent">
-            <div className="animate-marquee flex items-center gap-4 py-2">
-              {[...Array(6)].map((_, loopIdx) => (
-                <React.Fragment key={loopIdx}>
-                  {partners.map((part) => (
-                    <a
-                      key={`${loopIdx}-${part.id}`}
-                      href={part.website || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={part.name}
-                      className="px-3 sm:px-6 py-3 sm:py-4 bg-white rounded-xl border border-slate-200 shadow-sm hover:scale-[1.03] transition-transform w-[120px] min-[380px]:w-[145px] sm:w-[160px] h-16 sm:h-20 flex items-center justify-center text-[#5a4136] font-bold shrink-0"
-                    >
-                      <img
-                        alt={part.name}
-                        className="max-h-10 sm:max-h-12 max-w-full object-contain opacity-80"
-                        src={part.logoUrl}
-                        referrerPolicy="no-referrer"
-                      />
-                    </a>
-                  ))}
-                </React.Fragment>
-              ))}
-            </div>
+          /* Responsive grid of partner cards. Each card keeps its name + a
+             short website link visible at rest (rather than only on hover),
+             so the grid reads as a directory, not a logo strip. */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5 px-5 md:px-[64px] max-w-[1280px] mx-auto">
+            {partners.map((part) => (
+              <a
+                key={part.id}
+                href={part.website || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={part.name}
+                className="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-primary-orange/40 hover:-translate-y-0.5 transition-all duration-300 flex flex-col items-center text-center p-6"
+              >
+                <div className="w-full h-24 flex items-center justify-center mb-4">
+                  {part.logoUrl ? (
+                    <img
+                      alt={part.name}
+                      className="max-h-20 max-w-full object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                      src={part.logoUrl}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                    />
+                  ) : (
+                    <span className="w-16 h-16 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 text-xl font-bold">
+                      {(part.name || "?").charAt(0)}
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-sm font-bold text-secondary-blue tracking-tight line-clamp-1">
+                  {part.name}
+                </h3>
+                {part.website ? (
+                  <p className="text-[11px] text-slate-500 mt-1 truncate max-w-full group-hover:text-primary-orange transition-colors">
+                    {part.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-slate-400 mt-1">Website not set</p>
+                )}
+              </a>
+            ))}
           </div>
         )}
       </section>

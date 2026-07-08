@@ -5,6 +5,9 @@ import fs from "fs";
 import multer from "multer";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
+import bcrypt from "bcryptjs";
+import cookieParser from "cookie-parser";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -12,6 +15,117 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = Number(process.env.PORT) || 3000;
+
+/**
+ * Admin session configuration.
+ *
+ * - Credentials come from env vars when set; otherwise a dev default is used
+ *   so a fresh clone can sign in immediately.
+ * - The session token is a tiny stateless HMAC-signed payload
+ *   (`<base64url(json)>.<base64url(hmac)>`). No DB hit on every request —
+ *   just verify the signature and the `exp` claim.
+ */
+const SESSION_SECRET =
+  process.env.SESSION_SECRET ||
+  "dev-only-startup-barishal-session-secret-change-me-7e2c";
+const DEFAULT_ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
+const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+const SESSION_COOKIE = "sb_admin_session";
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+function base64urlEncode(input) {
+  return Buffer.from(input)
+    .toString("base64")
+    .replace(/=+$/, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+}
+function base64urlDecode(input) {
+  const padded =
+    input.replace(/-/g, "+").replace(/_/g, "/") +
+    "===".slice((input.length + 3) % 4);
+  return Buffer.from(padded, "base64").toString();
+}
+function signToken(payload) {
+  const body = base64urlEncode(JSON.stringify(payload));
+  const sig = base64urlEncode(
+    crypto.createHmac("sha256", SESSION_SECRET).update(body).digest()
+  );
+  return `${body}.${sig}`;
+}
+function verifyToken(token) {
+  if (typeof token !== "string" || !token.includes(".")) return null;
+  const [body, sig] = token.split(".");
+  if (!body || !sig) return null;
+  const expectedSig = base64urlEncode(
+    crypto.createHmac("sha256", SESSION_SECRET).update(body).digest()
+  );
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expectedSig);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  try {
+    const payload = JSON.parse(base64urlDecode(body));
+    if (!payload || typeof payload !== "object") return null;
+    if (typeof payload.exp !== "number" || Date.now() > payload.exp) return null;
+    if (typeof payload.username !== "string") return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Guard middleware. Reads the session cookie, verifies the HMAC, checks
+ * expiry, and attaches the admin username to the request. Returns 401
+ * otherwise — applied to every write endpoint below.
+ */
+function requireAuth(req, res, next) {
+  const token = req.cookies ? req.cookies[SESSION_COOKIE] : null;
+  const payload = token ? verifyToken(token) : null;
+  if (!payload) {
+    return res.status(401).json({ error: "Authentication required." });
+  }
+  req.adminUser = { username: payload.username };
+  next();
+}
+
+/**
+ * One-shot seed for the default admin user. Runs from readDB() — if the
+ * db has no users yet (fresh clone or wiped file) it creates a single
+ * account whose password is bcrypt-hashed. The dev default is also logged
+ * to the server console so the operator can sign in for the first time.
+ * Returns true if a new user was added (caller should persist).
+ */
+function seedAdminUser(db) {
+  if (Array.isArray(db.adminUsers) && db.adminUsers.length > 0) return false;
+  const passwordHash = bcrypt.hashSync(DEFAULT_ADMIN_PASSWORD, 10);
+  db.adminUsers = [
+    {
+      id: newId("admin"),
+      username: DEFAULT_ADMIN_USERNAME,
+      passwordHash,
+      createdAt: new Date().toISOString(),
+    },
+  ];
+  return true;
+}
+
+/**
+ * Helpers used by /api/homeStats.
+ *
+ * - `coerceStat(v)` accepts strings from a number <input>, plus null (which
+ *   means "reset this override"), and clamps to a non-negative integer.
+ * - `numOrZero(v)` returns the stored value or 0 for the GET response.
+ */
+function coerceStat(v) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.floor(n);
+}
+function numOrZero(v) {
+  return typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0;
+}
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
 const ADMIN_ORIGIN = process.env.ADMIN_ORIGIN || "http://localhost:5174";
 const DB_FILE = path.join(__dirname, "data", "db.json");
@@ -47,7 +161,7 @@ function crudRouter(app, resourceName, prefix, requiredFields = []) {
     res.json(item);
   });
 
-  app.post(`/api/${resourceName}`, (req, res) => {
+  app.post(`/api/${resourceName}`, requireAuth, (req, res) => {
     for (const field of requiredFields) {
       if (!req.body[field] || (typeof req.body[field] === "string" && !req.body[field].trim())) {
         return res.status(400).json({ error: `Field "${field}" is required.` });
@@ -65,7 +179,7 @@ function crudRouter(app, resourceName, prefix, requiredFields = []) {
     res.status(201).json({ success: true, data: item });
   });
 
-  app.put(`/api/${resourceName}/:id`, (req, res) => {
+  app.put(`/api/${resourceName}/:id`, requireAuth, (req, res) => {
     const db = readDB();
     const arr = db[resourceName] || [];
     const idx = arr.findIndex((x) => x.id === req.params.id);
@@ -76,7 +190,7 @@ function crudRouter(app, resourceName, prefix, requiredFields = []) {
     res.json({ success: true, data: arr[idx] });
   });
 
-  app.delete(`/api/${resourceName}/:id`, (req, res) => {
+  app.delete(`/api/${resourceName}/:id`, requireAuth, (req, res) => {
     const db = readDB();
     const arr = db[resourceName] || [];
     const idx = arr.findIndex((x) => x.id === req.params.id);
@@ -131,6 +245,12 @@ function readDB() {
       return initial;
     }
     const data = JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
+    // Migration: seed the admin user on first read after a fresh clone or
+    // after the db file is wiped. Persists immediately so subsequent reads
+    // skip this branch.
+    if (seedAdminUser(data)) {
+      writeDB(data);
+    }
     // Migration: backfill `status` on cohorts that pre-date the field.
     // First live program wins; rest default to closed. Persist once.
     if (Array.isArray(data.incubationPrograms)) {
@@ -174,24 +294,157 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "startup-barishal-server", port: PORT });
 });
 
+/**
+ * Auth endpoints.
+ *
+ *  POST   /api/auth/login  { username, password } -> sets HTTP-only
+ *                          session cookie, returns { username }
+ *  POST   /api/auth/logout                       -> clears the cookie
+ *  GET    /api/auth/me                           -> 200 { username } or
+ *                                                  401 if not signed in
+ *
+ * Login is open (otherwise the admin can never sign in). Logout and /me are
+ * safe to call without a session — they just respond appropriately.
+ */
+app.post("/api/auth/login", async (req, res) => {
+  const { username, password } = req.body || {};
+  if (
+    typeof username !== "string" ||
+    typeof password !== "string" ||
+    !username.trim() ||
+    !password
+  ) {
+    return res.status(400).json({ error: "Username and password are required." });
+  }
+  const db = readDB();
+  const user = (db.adminUsers || []).find(
+    (u) => u.username.toLowerCase() === username.trim().toLowerCase()
+  );
+  if (!user) {
+    // Constant-time-ish: still run a hash so timing can't reveal whether the
+    // username exists.
+    bcrypt.compareSync(password, "$2a$10$invalidsaltinvalidsaltinvalidsaltsa");
+    return res.status(401).json({ error: "Invalid username or password." });
+  }
+  const ok = bcrypt.compareSync(password, user.passwordHash);
+  if (!ok) {
+    return res.status(401).json({ error: "Invalid username or password." });
+  }
+  const token = signToken({
+    username: user.username,
+    exp: Date.now() + SESSION_TTL_MS,
+  });
+  res.cookie(SESSION_COOKIE, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: SESSION_TTL_MS,
+    path: "/",
+  });
+  res.json({ success: true, username: user.username });
+});
+
+app.post("/api/auth/logout", (_req, res) => {
+  res.clearCookie(SESSION_COOKIE, { path: "/" });
+  res.json({ success: true });
+});
+
+app.get("/api/auth/me", (req, res) => {
+  const token = req.cookies ? req.cookies[SESSION_COOKIE] : null;
+  const payload = token ? verifyToken(token) : null;
+  if (!payload) return res.status(401).json({ error: "Not signed in." });
+  res.json({ username: payload.username });
+});
+
 app.get("/api/stats", (_req, res) => {
   const db = readDB();
+  // The four "home stats" (events / startups / investors / cohorts) can be
+  // overridden by the admin via /api/homeStats. When an override is missing,
+  // fall back to the previous behaviour (auto-derive from DB, with a hard
+  // baseline for the numbers we couldn't compute).
+  const overrides = db.homeStats || {};
+  const eventsCount =
+    typeof overrides.eventsCount === "number" && !Number.isNaN(overrides.eventsCount)
+      ? overrides.eventsCount
+      : (db.events || []).length;
+  const startupsMentored =
+    typeof overrides.startupsMentored === "number" && !Number.isNaN(overrides.startupsMentored)
+      ? overrides.startupsMentored
+      : (db.applications || []).filter((a) => a.status === "Approved").length + 12;
+  const investorsOnboarded =
+    typeof overrides.investorsOnboarded === "number" && !Number.isNaN(overrides.investorsOnboarded)
+      ? overrides.investorsOnboarded
+      : 5;
+  const cohortsCompleted =
+    typeof overrides.cohortsCompleted === "number" && !Number.isNaN(overrides.cohortsCompleted)
+      ? overrides.cohortsCompleted
+      : 4;
   res.json({
-    cohortsCompleted: 4,
-    eventsCount: (db.events || []).length,
-    startupsMentored: (db.applications || []).filter((a) => a.status === "Approved").length + 12,
-    investorsOnboarded: 5,
+    cohortsCompleted,
+    eventsCount,
+    startupsMentored,
+    investorsOnboarded,
     currentApplicationsCount: (db.applications || []).length,
     currentContactsCount: (db.contacts || []).length,
     currentSubscribersCount: (db.subscribers || []).length,
     currentTeamCount: (db.teamMembers || []).length,
     currentProgramsCount: (db.incubationPrograms || []).length,
     currentMembershipsCount: (db.memberships || []).length,
+  });
+});
+
+/**
+ * Admin-editable home page stats. Stored on the DB under `homeStats` as a
+ * plain object of four integer fields. The public /api/stats route reads
+ * this and falls back to the legacy auto-derivation when a field is unset
+ * (or not a finite number), so existing deployments keep working without
+ * any migration step.
+ *
+ * Clamps every value to >= 0 and rounds to an integer — these numbers are
+ * shown literally on the homepage.
+ */
+app.get("/api/homeStats", (_req, res) => {
+  const db = readDB();
+  const o = db.homeStats || {};
+  res.json({
+    eventsCount: numOrZero(o.eventsCount),
+    startupsMentored: numOrZero(o.startupsMentored),
+    investorsOnboarded: numOrZero(o.investorsOnboarded),
+    cohortsCompleted: numOrZero(o.cohortsCompleted),
+  });
+});
+
+app.put("/api/homeStats", requireAuth, (req, res) => {
+  const db = readDB();
+  const body = req.body || {};
+  const incoming = {
+    eventsCount:      coerceStat(body.eventsCount),
+    startupsMentored: coerceStat(body.startupsMentored),
+    investorsOnboarded: coerceStat(body.investorsOnboarded),
+    cohortsCompleted: coerceStat(body.cohortsCompleted),
+  };
+  // If a field comes through as null we treat it as "clear override" so the
+  // public route falls back to the auto-derived value. This lets the admin
+  // reset any single tile.
+  const next = { ...(db.homeStats || {}) };
+  ["eventsCount", "startupsMentored", "investorsOnboarded", "cohortsCompleted"].forEach((k) => {
+    if (incoming[k] === null) delete next[k];
+    else next[k] = incoming[k];
+  });
+  db.homeStats = next;
+  writeDB(db);
+  // Return the same shape as the GET so the UI can refresh in one go.
+  res.json({
+    eventsCount:        numOrZero(next.eventsCount),
+    startupsMentored:   numOrZero(next.startupsMentored),
+    investorsOnboarded: numOrZero(next.investorsOnboarded),
+    cohortsCompleted:   numOrZero(next.cohortsCompleted),
   });
 });
 
@@ -294,7 +547,7 @@ app.get("/api/applications", (_req, res) => {
   res.json(readDB().applications || []);
 });
 
-app.put("/api/applications/:id", (req, res) => {
+app.put("/api/applications/:id", requireAuth, (req, res) => {
   const { id } = req.params;
   const { status, notes } = req.body;
   const db = readDB();
@@ -318,7 +571,7 @@ app.put("/api/applications/:id", (req, res) => {
  * Returns { success, deleted, remaining }.
  */
 function bulkDeleteResource(app, resource, allowedFields = []) {
-  app.delete(`/api/${resource}/bulk`, (req, res) => {
+  app.delete(`/api/${resource}/bulk`, requireAuth, (req, res) => {
     const db = readDB();
     const list = db[resource] || [];
     const { ids, filter, all } = req.body || {};
@@ -401,7 +654,7 @@ app.get("/api/subscribers", (_req, res) => {
 // Three new resources get full CRUD via the factory.
 crudRouter(app, "teamMembers", "team", ["name", "role"]);
 // Custom DELETE so we can wipe the per-member uploads folder on disk.
-app.delete("/api/teamMembers/:id", async (req, res) => {
+app.delete("/api/teamMembers/:id", requireAuth, async (req, res) => {
   const db = readDB();
   const arr = db.teamMembers || [];
   const idx = arr.findIndex((x) => x.id === req.params.id);
@@ -449,7 +702,7 @@ function cohortsRouter(app) {
     res.json(item);
   });
 
-  app.post("/api/incubationPrograms", (req, res) => {
+  app.post("/api/incubationPrograms", requireAuth, (req, res) => {
     for (const field of COHORT_REQUIRED) {
       if (!req.body[field] || (typeof req.body[field] === "string" && !req.body[field].trim())) {
         return res.status(400).json({ error: `Field "${field}" is required.` });
@@ -475,7 +728,7 @@ function cohortsRouter(app) {
     res.status(201).json({ success: true, data: item });
   });
 
-  app.put("/api/incubationPrograms/:id", (req, res) => {
+  app.put("/api/incubationPrograms/:id", requireAuth, (req, res) => {
     const db = readDB();
     const arr = db.incubationPrograms || [];
     const idx = arr.findIndex((x) => x.id === req.params.id);
@@ -503,7 +756,7 @@ function cohortsRouter(app) {
     res.json({ success: true, data: arr[idx] });
   });
 
-  app.delete("/api/incubationPrograms/:id", async (req, res) => {
+  app.delete("/api/incubationPrograms/:id", requireAuth, async (req, res) => {
     const db = readDB();
     const arr = db.incubationPrograms || [];
     const idx = arr.findIndex((x) => x.id === req.params.id);
@@ -522,7 +775,7 @@ cohortsRouter(app);
 // Events use the factory for POST/PUT (and GET), but DELETE is custom so we
 // can also wipe the per-event uploads folder on disk.
 crudRouter(app, "events", "evt", ["title", "date", "location", "description"]);
-app.delete("/api/events/:id", async (req, res) => {
+app.delete("/api/events/:id", requireAuth, async (req, res) => {
   const db = readDB();
   const arr = db.events || [];
   const idx = arr.findIndex((x) => x.id === req.params.id);
@@ -627,7 +880,7 @@ function partnerRouter(app) {
     res.json(item);
   });
 
-  app.post("/api/partners", (req, res) => {
+  app.post("/api/partners", requireAuth, (req, res) => {
     for (const f of PARTNER_REQUIRED) {
       if (!req.body[f] || (typeof req.body[f] === "string" && !req.body[f].trim())) {
         return res.status(400).json({ error: `Field "${f}" is required.` });
@@ -648,7 +901,7 @@ function partnerRouter(app) {
     res.status(201).json({ success: true, data: item });
   });
 
-  app.put("/api/partners/:id", (req, res) => {
+  app.put("/api/partners/:id", requireAuth, (req, res) => {
     const db = readDB();
     const arr = db.partners || [];
     const idx = arr.findIndex((p) => p.id === req.params.id);
@@ -663,7 +916,7 @@ function partnerRouter(app) {
     res.json({ success: true, data: arr[idx] });
   });
 
-  app.delete("/api/partners/:id", async (req, res) => {
+  app.delete("/api/partners/:id", requireAuth, async (req, res) => {
     const db = readDB();
     const arr = db.partners || [];
     const idx = arr.findIndex((p) => p.id === req.params.id);
@@ -688,6 +941,7 @@ partnerRouter(app);
 // logoUrl = /uploads/partners/<partnerId>/<filename> onto the partner record.
 app.post(
   "/api/partners/:id/logo",
+  requireAuth,
   partnerLogoUpload.any(),
   (req, res) => {
     const file = pickPartnerLogoFile(req);
@@ -710,6 +964,7 @@ app.post(
 // PUT alias — some admin UIs prefer PUT.
 app.put(
   "/api/partners/:id/logo",
+  requireAuth,
   partnerLogoUpload.any(),
   (req, res) => {
     const file = pickPartnerLogoFile(req);
@@ -730,7 +985,7 @@ app.put(
 );
 
 // DELETE only the logo (keeps the partner record, clears logoUrl).
-app.delete("/api/partners/:id/logo", (req, res) => {
+app.delete("/api/partners/:id/logo", requireAuth, (req, res) => {
   const db = readDB();
   const arr = db.partners || [];
   const idx = arr.findIndex((p) => p.id === req.params.id);
@@ -832,6 +1087,7 @@ async function removeEventFolder(eventId) {
 // body, the FIRST uploaded file becomes the new cover image.
 app.post(
   "/api/events/:id/images",
+  requireAuth,
   eventImageUpload.array("images", 20),
   (req, res) => {
     const files = req.files || [];
@@ -876,7 +1132,7 @@ app.post(
 );
 
 // Explicit cover-image replacement endpoint.
-app.put("/api/events/:id/cover", eventImageUpload.single("cover"), (req, res) => {
+app.put("/api/events/:id/cover", requireAuth, eventImageUpload.single("cover"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No cover file uploaded." });
   const db = readDB();
   const arr = db.events || [];
@@ -894,7 +1150,7 @@ app.put("/api/events/:id/cover", eventImageUpload.single("cover"), (req, res) =>
 
 // Remove a single image file (and clear coverImage / splice gallery).
 // DELETE /api/events/:id/images?url=/uploads/events/<id>/<file>
-app.delete("/api/events/:id/images", (req, res) => {
+app.delete("/api/events/:id/images", requireAuth, (req, res) => {
   const url = req.query.url;
   if (!url || typeof url !== "string") {
     return res.status(400).json({ error: "Missing image url query parameter." });
@@ -979,6 +1235,7 @@ async function removeCohortFolder(cohortId) {
 // Multipart field: "cover" (single file).
 app.post(
   "/api/incubationPrograms/:id/cover",
+  requireAuth,
   cohortCoverUpload.single("cover"),
   (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No cover file uploaded." });
@@ -1000,6 +1257,7 @@ app.post(
 // Same endpoint, PUT alias (used by some admin UIs).
 app.put(
   "/api/incubationPrograms/:id/cover",
+  requireAuth,
   cohortCoverUpload.single("cover"),
   (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No cover file uploaded." });
@@ -1020,7 +1278,7 @@ app.put(
 
 // Remove a cohort's cover image.  Only deletes locally-uploaded assets.
 // DELETE /api/incubationPrograms/:id/cover
-app.delete("/api/incubationPrograms/:id/cover", (req, res) => {
+app.delete("/api/incubationPrograms/:id/cover", requireAuth, (req, res) => {
   const db = readDB();
   const arr = db.incubationPrograms || [];
   const idx = arr.findIndex((p) => p.id === req.params.id);
@@ -1079,6 +1337,7 @@ async function removeTeamFolder(memberId) {
 // Multipart field: "photo" (single file). Stored on record.photoUrl.
 app.post(
   "/api/teamMembers/:id/photo",
+  requireAuth,
   teamPhotoUpload.single("photo"),
   (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No photo file uploaded." });
@@ -1101,6 +1360,7 @@ app.post(
 // PUT alias — some admin UIs prefer PUT.
 app.put(
   "/api/teamMembers/:id/photo",
+  requireAuth,
   teamPhotoUpload.single("photo"),
   (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No photo file uploaded." });
@@ -1120,7 +1380,7 @@ app.put(
 );
 
 // Remove a team member's photo (only deletes locally-uploaded assets).
-app.delete("/api/teamMembers/:id/photo", (req, res) => {
+app.delete("/api/teamMembers/:id/photo", requireAuth, (req, res) => {
   const db = readDB();
   const arr = db.teamMembers || [];
   const idx = arr.findIndex((m) => m.id === req.params.id);
@@ -1203,7 +1463,7 @@ app.get("/api/featured/:id", (req, res) => {
   res.json(item);
 });
 
-app.post("/api/featured", (req, res) => {
+app.post("/api/featured", requireAuth, (req, res) => {
   const db = readDB();
   if (!db.featured) db.featured = [];
   const item = {
@@ -1220,7 +1480,7 @@ app.post("/api/featured", (req, res) => {
   res.status(201).json({ success: true, data: item });
 });
 
-app.put("/api/featured/:id", (req, res) => {
+app.put("/api/featured/:id", requireAuth, (req, res) => {
   const db = readDB();
   const arr = db.featured || [];
   const idx = arr.findIndex((f) => f.id === req.params.id);
@@ -1243,7 +1503,7 @@ app.put("/api/featured/:id", (req, res) => {
   res.json({ success: true, data: arr[idx] });
 });
 
-app.delete("/api/featured/:id", async (req, res) => {
+app.delete("/api/featured/:id", requireAuth, async (req, res) => {
   const db = readDB();
   const arr = db.featured || [];
   const idx = arr.findIndex((f) => f.id === req.params.id);
@@ -1260,6 +1520,7 @@ app.delete("/api/featured/:id", async (req, res) => {
 // config can drive the form without any custom wiring.
 app.post(
   "/api/featured/:id/image",
+  requireAuth,
   // ResourceForm.submit() always submits the file under the field name
   // "photo" regardless of the resource, so we read it under that name to
   // stay aligned with the rest of the admin upload endpoints (team, etc.).
@@ -1283,6 +1544,7 @@ app.post(
 
 app.put(
   "/api/featured/:id/image",
+  requireAuth,
   // Same field-name alignment as the POST endpoint above — the admin UI
   // submits the file as "photo".
   featuredImageUpload.single("photo"),
@@ -1305,7 +1567,7 @@ app.put(
 
 // Clear the image (keeps the record, blanks imageUrl). Files we own are
 // also unlinked from disk.
-app.delete("/api/featured/:id/image", (req, res) => {
+app.delete("/api/featured/:id/image", requireAuth, (req, res) => {
   const db = readDB();
   const arr = db.featured || [];
   const idx = arr.findIndex((f) => f.id === req.params.id);
@@ -1318,6 +1580,17 @@ app.delete("/api/featured/:id/image", (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
+  // Touch the DB once on boot so the admin user is seeded and the
+  // default credentials appear in the log on first run.
+  const db = readDB();
+  const userCount = (db.adminUsers || []).length;
   console.log(`[Startup Barishal API] listening on http://localhost:${PORT}`);
   console.log(`  CORS: ${CLIENT_ORIGIN}, ${ADMIN_ORIGIN}`);
+  console.log(`  Admin users in DB: ${userCount}`);
+  if (userCount > 0) {
+    console.log(
+      `  Default admin sign-in: ${DEFAULT_ADMIN_USERNAME} / ${DEFAULT_ADMIN_PASSWORD} ` +
+        `(set ADMIN_USERNAME / ADMIN_PASSWORD env vars to override, or SESSION_SECRET for the signing key)`
+    );
+  }
 });

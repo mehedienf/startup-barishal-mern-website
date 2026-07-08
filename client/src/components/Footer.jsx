@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Mail, CheckCircle2, ArrowRight, Facebook, Instagram, Linkedin, Youtube } from "lucide-react";
+import logoWatermark from "../assets/startup-barishal-logo-2.png";
 
 const SOCIAL_LINKS = [
   { icon: Facebook, label: "Facebook", href: "https://facebook.com/startupbarishal" },
@@ -45,8 +46,18 @@ export default function Footer({ onNavigate }) {
   };
 
   return (
-    <footer className="pt-16 pb-8 bg-white/80 backdrop-blur-[10px] border-t border-[#065ca9]/8 mt-auto">
-      <div className="max-w-[1280px] mx-auto px-5 md:px-[64px]">
+    <footer className="relative pt-16 pb-8 bg-white/80 backdrop-blur-[10px] border-t border-[#065ca9]/8 mt-auto overflow-hidden">
+      {/* Decorative background watermark — large, low-opacity logo with a
+          soft drop-shadow so it reads as ambient depth rather than content.
+          pointer-events-none keeps it from blocking any clicks on the
+          actual footer UI. */}
+      <img
+        aria-hidden="true"
+        alt=""
+        src={logoWatermark}
+        className="pointer-events-none select-none absolute inset-y-0 right-[-6%] md:right-[20%] my-auto h-[120%] sm:h-[100%] md:h-[100%] w-auto max-w-none opacity-[0.07] blur-[2px] drop-shadow-[0_25px_30px_rgba(6,92,169,0.25)]"
+      />
+      <div className="relative max-w-[1280px] mx-auto px-5 md:px-[64px]">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           
           {/* Brand Info */}
@@ -57,7 +68,7 @@ export default function Footer({ onNavigate }) {
             >
               <img
                 alt="Startup Barishal Logo"
-                className="h-10 w-auto max-w-[140px] object-contain"
+                className="h-10 w-auto max-w-[140px] object-contain drop-shadow-sm"
                 src="/src/assets/startupbarishal-logo.png"
               />
             </div>

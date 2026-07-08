@@ -12,6 +12,7 @@ import SubscribersPage from './components/SubscribersPage.jsx';
 import PartnersPage from './components/PartnersPage.jsx';
 import MembershipsPage from './components/MembershipsPage.jsx';
 import FeaturedImagesPage from './components/FeaturedImagesPage.jsx';
+import HomeStatsPage from './components/HomeStatsPage.jsx';
 import './index.css';
 
 const router = createBrowserRouter([
@@ -29,6 +30,7 @@ const router = createBrowserRouter([
       { path: 'partners', element: <PartnersPage /> },
       { path: 'memberships', element: <MembershipsPage /> },
       { path: 'featured', element: <FeaturedImagesPage /> },
+      { path: 'home-stats', element: <HomeStatsPage /> },
     ],
   },
 ]);
