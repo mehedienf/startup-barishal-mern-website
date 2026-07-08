@@ -51,12 +51,14 @@ export default function Footer({ onNavigate }) {
       {/* Decorative background watermark — large, low-opacity logo with a
           soft drop-shadow so it reads as ambient depth rather than content.
           pointer-events-none keeps it from blocking any clicks on the
-          actual footer UI. */}
+          actual footer UI. Width is locked to a sane fraction of the
+          footer on every breakpoint so the absolutely-positioned image
+          cannot extend past the document on narrow viewports. */}
       <img
         aria-hidden="true"
         alt=""
         src={logoWatermark}
-        className="pointer-events-none select-none absolute inset-y-0 right-[-6%] md:right-[20%] my-auto h-[120%] sm:h-[100%] md:h-[100%] w-auto max-w-none opacity-[0.07] blur-[2px] drop-shadow-[0_25px_30px_rgba(6,92,169,0.25)]"
+        className="pointer-events-none select-none absolute inset-y-0 right-0 md:right-[20%] my-auto h-[100%] w-[55%] sm:w-[45%] md:w-[35%] max-w-full object-contain opacity-[0.07] blur-[2px] drop-shadow-[0_25px_30px_rgba(6,92,169,0.25)]"
       />
       <div className="relative max-w-[1280px] mx-auto px-5 md:px-[64px]">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">

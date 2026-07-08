@@ -24,7 +24,18 @@ const PREFIX = "feat";
 
 export function registerFeatured(app) {
   app.get(`/api/${RESOURCE}`, (_req, res) => {
-    res.json(readDB()[RESOURCE] || []);
+    // The carousel must reflect each record's `order` value. Records
+    // with the same `order` fall back to creation time so the rotation
+    // is stable across reloads.
+    const items = (readDB()[RESOURCE] || []).slice().sort((a, b) => {
+      const oa = Number.isFinite(Number(a.order)) ? Number(a.order) : Infinity;
+      const ob = Number.isFinite(Number(b.order)) ? Number(b.order) : Infinity;
+      if (oa !== ob) return oa - ob;
+      const ta = new Date(a.createdAt || 0).getTime();
+      const tb = new Date(b.createdAt || 0).getTime();
+      return ta - tb;
+    });
+    res.json(items);
   });
 
   app.get(`/api/${RESOURCE}/:id`, (req, res) => {

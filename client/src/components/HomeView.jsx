@@ -109,6 +109,9 @@ export default function HomeView({ onNavigate }) {
     "Apply for Incubation";
   const applyButtonLink =
     (activeCohort?.applyButtonLink && activeCohort.applyButtonLink.trim()) || "";
+  // The "Cohorts Open" badge tracks whether any cohort is currently live,
+  // independently of whether an external apply URL has been configured.
+  const hasLiveCohort = activeCohort?.status === "live";
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
   // Hero slides — uploads from the admin panel if any, otherwise the
@@ -285,14 +288,16 @@ export default function HomeView({ onNavigate }) {
     <div className="animate-fadeIn">
       {/* Hero Section */}
       <section className="py-12 md:py-20 max-w-[1280px] mx-auto px-5 md:px-[64px]" id="hero">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center min-w-0">
 
           {/* Hero Content Left */}
-          <div className="lg:col-span-6 flex flex-col gap-6">
-            <div className="inline-flex items-center gap-2 bg-[#ff6b00]/10 border border-[#ff6b00]/20 text-primary-orange px-4 py-1.5 rounded-full self-start text-xs font-semibold tracking-wide shadow-sm animate-pulse">
-              <Rocket className="w-3.5 h-3.5 fill-primary-orange" />
-              <span>Incubation Cohorts Open</span>
-            </div>
+          <div className="lg:col-span-6 flex flex-col gap-6 min-w-0">
+            {hasLiveCohort && (
+              <div className="inline-flex items-center gap-2 bg-[#ff6b00]/10 border border-[#ff6b00]/20 text-primary-orange px-4 py-1.5 rounded-full self-start text-xs font-semibold tracking-wide shadow-sm animate-pulse">
+                <Rocket className="w-3.5 h-3.5 fill-primary-orange" />
+                <span>Incubation Cohorts Open</span>
+              </div>
+            )}
 
             <h1 className="text-3xl min-[380px]:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-secondary-blue leading-[1.12]">
               Accelerate Your <br />
@@ -737,19 +742,19 @@ function TeamAvatarRow({ team }) {
 
   const slotStyles = {
     active: {
-      wrapper: "w-36 h-36 sm:w-44 sm:h-44 opacity-100 -translate-y-2 z-30 ring-4 ring-white shadow-2xl",
+      wrapper: "w-28 h-28 sm:w-44 sm:h-44 opacity-100 -translate-y-2 z-30 ring-4 ring-white shadow-2xl",
       fontSize: "2.75rem",
     },
     near: {
-      wrapper: "w-24 h-24 sm:w-28 sm:h-28 opacity-70 hover:opacity-100 -translate-y-0 z-20 ring-2 ring-white shadow-md",
+      wrapper: "w-20 h-20 sm:w-28 sm:h-28 opacity-70 hover:opacity-100 -translate-y-0 z-20 ring-2 ring-white shadow-md",
       fontSize: "1.5rem",
     },
     mid: {
-      wrapper: "w-20 h-20 sm:w-24 sm:h-24 opacity-50 hover:opacity-80 translate-y-1 z-10 ring-2 ring-white shadow-sm",
+      wrapper: "w-16 h-16 sm:w-24 sm:h-24 opacity-50 hover:opacity-80 translate-y-1 z-10 ring-2 ring-white shadow-sm",
       fontSize: "1.05rem",
     },
     far: {
-      wrapper: "w-14 h-14 sm:w-16 sm:h-16 opacity-30 hover:opacity-60 translate-y-2 z-0 ring-2 ring-white shadow-sm",
+      wrapper: "w-12 h-12 sm:w-16 sm:h-16 opacity-30 hover:opacity-60 translate-y-2 z-0 ring-2 ring-white shadow-sm",
       fontSize: "0.85rem",
     },
   };
@@ -758,25 +763,27 @@ function TeamAvatarRow({ team }) {
 
   return (
     <div className="flex flex-col items-center">
-      {/* Avatar row */}
-      <div className="relative w-full max-w-[920px]">
+      {/* Avatar row. `overflow-hidden` keeps off-screen neighbors from
+          forcing horizontal scroll on narrow viewports without breaking
+          the visible carousel transform. */}
+      <div className="relative w-full max-w-[920px] overflow-hidden">
         {total > 1 && (
           <>
             <button
               type="button"
               onClick={goPrev}
               aria-label="Previous team member"
-              className="hidden sm:flex absolute -left-2 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-white border border-slate-200 shadow-md text-secondary-blue hover:text-primary-orange hover:border-primary-orange/40 hover:scale-105 transition-all items-center justify-center cursor-pointer"
+              className="flex absolute -left-1 sm:-left-2 top-1/2 -translate-y-1/2 z-40 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white border border-slate-200 shadow-md text-secondary-blue hover:text-primary-orange hover:border-primary-orange/40 hover:scale-105 transition-all items-center justify-center cursor-pointer"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
             <button
               type="button"
               onClick={goNext}
               aria-label="Next team member"
-              className="hidden sm:flex absolute -right-2 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-white border border-slate-200 shadow-md text-secondary-blue hover:text-primary-orange hover:border-primary-orange/40 hover:scale-105 transition-all items-center justify-center cursor-pointer"
+              className="flex absolute -right-1 sm:-right-2 top-1/2 -translate-y-1/2 z-40 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white border border-slate-200 shadow-md text-secondary-blue hover:text-primary-orange hover:border-primary-orange/40 hover:scale-105 transition-all items-center justify-center cursor-pointer"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </>
         )}
@@ -850,7 +857,7 @@ function TeamAvatarRow({ team }) {
               Each link is only rendered when its data is present so admins
               can leave fields blank without showing an empty icon. */}
           {(active.email || active.phone || active.linkedinUrl || active.facebookUrl || active.twitterUrl) && (
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-semibold text-secondary-blue">
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-4 gap-y-2 text-xs font-semibold text-secondary-blue">
               {active.email && (
                 <a
                   href={`mailto:${active.email}`}

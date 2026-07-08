@@ -11,6 +11,14 @@
 }
 
 @layer base {
+  /* Prevent any stray descendant from forcing horizontal scroll on
+     narrow viewports. The marquee + carousel strips still scroll inside
+     their own `overflow-x-auto` containers, so the user-facing
+     experience is preserved. */
+  html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
   body {
     @apply select-none font-sans bg-[#F8FAFC] text-[#191C1E] antialiased;
   }
@@ -32,7 +40,12 @@
   }
 
   .team-avatar-step {
-    --avatar-step: 130px;
+    --avatar-step: 96px;
+  }
+  @media (min-width: 480px) {
+    .team-avatar-step {
+      --avatar-step: 130px;
+    }
   }
   @media (min-width: 640px) {
     .team-avatar-step {
