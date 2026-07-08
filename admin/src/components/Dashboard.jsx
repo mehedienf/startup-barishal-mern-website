@@ -8,10 +8,12 @@ import {
   Users,
   Calendar,
   GraduationCap,
+  UserPlus,
 } from "lucide-react";
 
 const TILES = [
   { key: "currentApplicationsCount", label: "Cohort Submissions", icon: FileText, color: "text-secondary-blue", bg: "bg-blue-100/60" },
+  { key: "currentMembershipsCount",  label: "Membership Applications", icon: UserPlus, color: "text-cyan-700",  bg: "bg-cyan-100/60" },
   { key: "currentContactsCount",    label: "Contact Messages",   icon: MessageSquare, color: "text-primary-orange", bg: "bg-orange-100/60" },
   { key: "currentSubscribersCount", label: "Newsletter Units",   icon: Mail, color: "text-emerald-700", bg: "bg-emerald-100/60" },
   { key: "currentTeamCount",        label: "Team Members",       icon: Users, color: "text-violet-700",  bg: "bg-violet-100/60" },

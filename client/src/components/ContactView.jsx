@@ -227,8 +227,8 @@ export default function ContactView() {
                 </div>
                 <div>
                   <h4 className="text-xs uppercase tracking-widest font-extrabold text-white/70 mb-1">Email Us</h4>
-                  <a className="text-sm md:text-base text-slate-100 hover:text-primary-orange transition-colors underline" href="mailto:startupbarishal@gmail.com">
-                    startupbarishal@gmail.com
+                  <a className="text-sm md:text-base text-slate-100 hover:text-primary-orange transition-colors underline" href="mailto:startupbarishal.bd@gmail.com">
+                    startupbarishal.bd@gmail.com
                   </a>
                 </div>
               </li>

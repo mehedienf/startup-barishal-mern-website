@@ -17,6 +17,7 @@ function computeStats(db) {
     currentSubscribersCount: (db.subscribers || []).length,
     currentTeamCount: (db.teamMembers || []).length,
     currentProgramsCount: (db.incubationPrograms || []).length,
+    currentMembershipsCount: (db.memberships || []).length,
     eventsCount: (db.events || []).length,
     // Keep canonical names too so existing callers keep working.
     contacts: (db.contacts || []).length,

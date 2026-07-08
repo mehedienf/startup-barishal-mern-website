@@ -223,7 +223,9 @@ export default function ContactsPage() {
                       </td>
                       <td className="p-4 font-semibold text-secondary-blue">{c.subject}</td>
                       <td className="p-4 max-w-[340px]">
-                        <p className="text-slate-700 text-xs leading-relaxed line-clamp-3 bg-slate-50 p-2 rounded-lg border border-slate-100">{c.message}</p>
+                        <div className="max-h-32 overflow-y-auto bg-slate-50 p-2 rounded-lg border border-slate-100">
+                          <p className="text-slate-700 text-xs leading-relaxed whitespace-pre-wrap break-words">{c.message}</p>
+                        </div>
                       </td>
                     </tr>
                   );

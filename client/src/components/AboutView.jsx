@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Rocket, Eye, Loader2, Mail, Phone, Linkedin, Facebook, Twitter } from "lucide-react";
+import { Rocket, Eye, Loader2, Mail, Phone, Linkedin, Facebook, Twitter, Sparkles, ArrowRight } from "lucide-react";
 
 export default function AboutView() {
   // Live team members from the MERN API
@@ -161,6 +161,45 @@ export default function AboutView() {
                 </div>
               </div>
             ))}
+
+            {/* "Next you?" — invitation CTA card to round out the team grid */}
+            <div className="relative bg-gradient-to-br from-secondary-blue via-[#0b1f3a] to-secondary-blue text-white border border-secondary-blue rounded-xl overflow-hidden hover:shadow-lg hover:border-primary-orange/50 hover:translate-y-[-4px] transition-all duration-300 flex flex-col items-center justify-center text-center pt-8 pb-6 px-6">
+              {/* "Your spot" badge — pinned to top-left corner */}
+              <span className="absolute top-3 left-3 z-10 text-[10px] font-bold uppercase tracking-[0.25em] text-primary-orange bg-white/10 border border-primary-orange/40 px-2 py-1 rounded-full backdrop-blur-sm">
+                Your spot
+              </span>
+
+              {/* Decorative sparkle accent */}
+              <div className="pointer-events-none absolute top-4 right-4 text-primary-orange/40">
+                <Sparkles className="w-6 h-6" />
+              </div>
+
+              {/* Avatar circle now hosts the human silhouette as the visual */}
+              <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full overflow-hidden border-4 border-white/10 shadow-md shrink-0 bg-gradient-to-br from-primary-orange/20 to-secondary-blue/20 flex items-end justify-center">
+                <svg
+                  viewBox="0 0 200 200"
+                  className="w-[88%] h-[88%] text-primary-orange"
+                  fill="currentColor"
+                  preserveAspectRatio="xMidYMax meet"
+                >
+                  <circle cx="100" cy="62" r="34" />
+                  <path d="M30 200 C30 138 60 110 100 110 C140 110 170 138 170 200 Z" />
+                </svg>
+              </div>
+              <div className="relative mt-5 flex flex-col items-center gap-2">
+                <h3 className="font-bold text-white text-lg">Next you?</h3>
+                <p className="text-white/70 text-xs leading-relaxed max-w-[220px]">
+                  Send us a mail with your CV and a short note about what you'd
+                  love to build at Startup Barishal.
+                </p>
+                <a
+                  href="mailto:startupbarishal.bd@gmail.com?subject=Joining%20the%20Startup%20Barishal%20team&body=Hi%20team%2C%0A%0AI%27d%20love%20to%20join%20the%20team.%20Here%27s%20a%20bit%20about%20me%20and%20my%20CV%3A%0A%0A"
+                  className="mt-3 inline-flex items-center gap-1.5 bg-primary-orange hover:bg-primary-hover text-white text-xs font-bold px-4 py-2 rounded-full transition-colors shadow-md"
+                >
+                  <Mail className="w-3.5 h-3.5" />Email Us
+                </a>
+              </div>
+            </div>
           </div>
         )}
       </section>
