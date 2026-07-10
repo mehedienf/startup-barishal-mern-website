@@ -37,9 +37,19 @@ export default function App() {
   }, [location.pathname]);
 
   // Backwards-compatible navigation helper: child components still call
-  // onNavigate("events") etc.
+  // onNavigate("events") etc.  Also accepts an object
+  //   { id: "events", eventId: "evt-xxx" }
+  // to deep-link into a specific event card via a URL hash, e.g.
+  //   /events#evt-xxx
   const navigateById = useCallback(
-    (id) => {
+    (arg) => {
+      if (arg && typeof arg === "object") {
+        const { id, eventId, hash } = arg;
+        const path = ID_TO_PATH[id] || `/${id}`;
+        navigate(path + (eventId ? `#${eventId}` : hash || ""));
+        return;
+      }
+      const id = arg;
       const path = ID_TO_PATH[id] || `/${id}`;
       navigate(path);
     },

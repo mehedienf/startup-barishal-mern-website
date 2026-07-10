@@ -12,6 +12,7 @@ import {
   UserPlus,
   ImageIcon,
   BarChart3,
+  Rocket,
   LogOut,
   ShieldCheck,
   X,
@@ -29,6 +30,7 @@ const navItems = [
   { to: "/partners", label: "Partners", icon: Handshake, resource: "partners" },
   { to: "/memberships", label: "Membership Applications", icon: UserPlus, resource: "memberships" },
   { to: "/featured", label: "Hero Carousel", icon: ImageIcon, resource: "featured" },
+  { to: "/initiatives", label: "Initiatives", icon: Rocket, resource: "initiatives" },
   { to: "/home-stats", label: "Home Page Stats", icon: BarChart3, resource: "homeStats" },
 ];
 

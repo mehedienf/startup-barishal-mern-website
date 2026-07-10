@@ -23,6 +23,10 @@ import {
 } from "lucide-react";
 import { apiFetch, resolveAssetUrl } from "../lib/api.js";
 
+// Bundled brand logo, used as the watermark on the home CTA so the panel
+// reads as branded content rather than a generic call-to-action block.
+import startupBarishalLogo2 from "../assets/startup-barishal-logo-2.png";
+
 // Bundled fallback shown only when /api/featured returns nothing usable
 // (e.g. dev server offline, no admin images uploaded yet). Uses Unsplash
 // URLs that don't depend on local assets — keeping the site image-free of
@@ -151,6 +155,7 @@ export default function HomeView({ onNavigate }) {
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [partners, setPartners] = useState([]);
+  const [initiatives, setInitiatives] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -162,7 +167,16 @@ export default function HomeView({ onNavigate }) {
         console.error("Failed to load partners:", err);
       }
     }
+    async function loadInitiatives() {
+      try {
+        const res = await apiFetch("/api/initiatives");
+        if (res.ok && !cancelled) setInitiatives(await res.json());
+      } catch (err) {
+        console.error("Failed to load initiatives:", err);
+      }
+    }
     loadPartners();
+    loadInitiatives();
     return () => { cancelled = true; };
   }, []);
 
@@ -506,45 +520,19 @@ export default function HomeView({ onNavigate }) {
         </div>
       </section>
 
-      {/* Meet the Team */}
-      <section className="py-8 md:py-12 max-w-[1280px] mx-auto px-5 md:px-[64px]" id="team">
-        <div className="text-center flex flex-col gap-3 mb-8">
-          <div className="inline-flex items-center gap-2 bg-[#ff6b00]/10 border border-[#ff6b00]/20 text-primary-orange px-4 py-1.5 rounded-full self-center text-xs font-semibold uppercase tracking-wider shadow-sm">
-            <Users className="w-3.5 h-3.5" />
-            <span>Our People</span>
-          </div>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-secondary-blue tracking-tight">
-            Meet the Team
-          </h2>
-          <p className="text-base md:text-lg text-[#5a4136]/80 max-w-[600px] mx-auto leading-relaxed">
-            Operators, mentors, and ecosystem builders behind Startup Barishal.
-          </p>
-        </div>
-
-        {teamLoading ? (
-          <div className="flex justify-center py-12"><Loader2 className="w-7 h-7 text-primary-orange animate-spin" /></div>
-        ) : team.length === 0 ? (
-          <p className="text-center text-sm text-slate-400 py-8">No team members to show yet.</p>
-        ) : (
-          <TeamAvatarRow team={team} />
-        )}
-      </section>
-
       {/* NEW SECTION: New Events Overview Section (Added Before CTA) */}
       <section className="py-16 bg-slate-50 border-y border-slate-200/50" id="events-overview">
         <div className="max-w-[1280px] mx-auto px-5 md:px-[64px]">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-            <div className="flex flex-col gap-3">
-              <h2 className="text-3xl md:text-4xl font-extrabold text-secondary-blue tracking-tight">
-                Latest Events & Ecosystem Highlights
-              </h2>
-              <p className="text-base text-[#5a4136]/80 max-w-[600px] leading-relaxed">
-                Catch up with the latest startup community summits, developer sprint bootcamps, and workshop galleries.
-              </p>
-            </div>
+          <div className="flex flex-col items-center text-center gap-4 mb-12">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-secondary-blue tracking-tight">
+              Latest Events & Ecosystem Highlights
+            </h2>
+            <p className="text-base text-[#5a4136]/80 max-w-[600px] leading-relaxed">
+              Catch up with the latest startup community summits, developer sprint bootcamps, and workshop galleries.
+            </p>
             <button
               onClick={() => onNavigate("events")}
-              className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:border-primary-orange/40 text-secondary-blue hover:text-primary-orange px-6 py-3 rounded-full text-sm font-bold shadow-sm hover:shadow transition-all whitespace-nowrap self-start md:self-auto cursor-pointer"
+              className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:border-primary-orange/40 text-secondary-blue hover:text-primary-orange px-6 py-3 rounded-full text-sm font-bold shadow-sm hover:shadow transition-all whitespace-nowrap cursor-pointer"
             >
               <span>Explore All Events</span>
               <ArrowRight className="w-4 h-4" />
@@ -588,7 +576,7 @@ export default function HomeView({ onNavigate }) {
                         <span className="line-clamp-1">{event.location || "TBA"}</span>
                       </div>
                       <button
-                        onClick={() => onNavigate("events")}
+                        onClick={() => onNavigate({ id: "events", eventId: event.id })}
                         className="text-xs font-bold text-primary-orange hover:text-primary-hover inline-flex items-center gap-1 cursor-pointer"
                       >
                         <span>More</span>
@@ -603,47 +591,103 @@ export default function HomeView({ onNavigate }) {
         </div>
       </section>
 
-      {/* CALL TO ACTION with Orange-Crimson glass style mapping */}
-      <section className="py-12 max-w-[1280px] mx-auto px-5 md:px-[64px]" id="cta">
-        <div className="bg-gradient-to-r from-primary-orange to-[#d95a00] text-white rounded-[2rem] p-8 md:p-14 relative overflow-hidden shadow-xl shadow-orange-500/10">
-
-          {/* Subtle linear decorative shapes */}
-          <div className="absolute inset-0 z-0 pointer-events-none opacity-10">
-            <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[150%] bg-white rounded-full blur-3xl rotate-12"></div>
-            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[120%] bg-slate-900 rounded-full blur-3xl"></div>
+      {/* Meet the Team */}
+      <section className="py-8 md:py-12 max-w-[1280px] mx-auto px-5 md:px-[64px] overflow-hidden" id="team">
+        <div className="text-center flex flex-col gap-3 mb-8">
+          <div className="inline-flex items-center gap-2 bg-[#ff6b00]/10 border border-[#ff6b00]/20 text-primary-orange px-4 py-1.5 rounded-full self-center text-xs font-semibold uppercase tracking-wider shadow-sm">
+            <Users className="w-3.5 h-3.5" />
+            <span>Our People</span>
           </div>
-
-          <div className="relative z-10 flex flex-col items-center text-center max-w-[800px] mx-auto gap-6">
-            <div className="bg-white/10 px-4 py-1 rounded-full text-xs font-bold tracking-wider uppercase border border-white/20">
-              Barishal Tech Ecosystem Pulse
-            </div>
-            <h2 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
-              Ready to Launch?
-            </h2>
-            <p className="text-sm md:text-base text-white/95 leading-relaxed max-w-[650px]">
-              Join our next incubation cohort. Get access to the physical office desk resources, direct capital networks, and senior engineering mentors needed to scale your project.
-            </p>
-            {applyButtonLink ? (
-              <a
-                href={applyButtonLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-white text-primary-orange hover:text-primary-hover px-8 py-4 rounded-xl font-bold text-sm shadow-md transition-all hover:bg-slate-50 hover:translate-y-[-2px] mt-4 z-10 cursor-pointer"
-              >
-                <span>Apply for Incubation</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </a>
-            ) : (
-              <button
-                onClick={() => onNavigate("incubation")}
-                className="bg-white text-primary-orange hover:text-primary-hover px-8 py-4 rounded-xl font-bold text-sm shadow-md transition-all hover:bg-slate-50 hover:translate-y-[-2px] mt-4 z-10 cursor-pointer"
-              >
-                Apply for Incubation
-              </button>
-            )}
-          </div>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-secondary-blue tracking-tight">
+            Meet the Team
+          </h2>
+          <p className="text-base md:text-lg text-[#5a4136]/80 max-w-[600px] mx-auto leading-relaxed">
+            Operators, mentors, and ecosystem builders behind Startup Barishal.
+          </p>
         </div>
+
+        {teamLoading ? (
+          <div className="flex justify-center py-12"><Loader2 className="w-7 h-7 text-primary-orange animate-spin" /></div>
+        ) : team.length === 0 ? (
+          <p className="text-center text-sm text-slate-400 py-8">No team members to show yet.</p>
+        ) : (
+          <TeamAvatarRow team={team} />
+        )}
       </section>
+
+      {/* Our Initiatives — Startups we mentored. Mirrors AboutView's partner grid
+          with subtle differences: hover gradient ring, optional tagline, and an
+          explicit "Visit site →" link. Section hides itself when no initiatives
+          are published from the admin panel. */}
+      {initiatives.length > 0 && (
+        <section className="py-16 md:py-20 bg-white" id="initiatives">
+          <div className="text-center mb-10 px-5 md:px-[64px]">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-primary-orange/40 bg-primary-orange/10 text-primary-orange text-[11px] md:text-xs font-bold uppercase tracking-widest">
+              <Rocket className="w-3.5 h-3.5" />
+              Our Initiatives
+            </span>
+            <h2 className="text-2xl md:text-3xl font-bold text-secondary-blue mt-4 mb-3">
+              Startups We Mentored
+            </h2>
+            <p className="text-slate-500 text-xs md:text-sm max-w-xl mx-auto">
+              Founders we've guided from idea to launch. Meet the businesses
+              shaping Barishal's startup story.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-7 px-5 md:px-[64px] max-w-[1280px] mx-auto">
+            {initiatives.map((init) => {
+              const Wrapper = init.website ? "a" : "div";
+              const wrapperProps = init.website
+                ? {
+                    href: init.website,
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                  }
+                : {};
+              return (
+                <Wrapper
+                  key={init.id}
+                  {...wrapperProps}
+                  className="group relative bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-1 hover:border-primary-orange/50 transition-all duration-300 overflow-hidden flex flex-col"
+                >
+                  {/* Logo fills the whole card. Text overlays the bottom of the
+                      logo on a gradient strip so the image is unobstructed. */}
+                  <div className="relative aspect-square w-full flex items-center justify-center bg-white overflow-hidden">
+                    {init.logoUrl ? (
+                      <img
+                        src={resolveAssetUrl(init.logoUrl)}
+                        alt={init.name}
+                        className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.04]"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => { e.currentTarget.style.display = "none"; }}
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-300">
+                        <Rocket className="w-10 h-10" />
+                      </div>
+                    )}
+
+                    {/* Bottom-anchored overlay. Sits at the foot of the logo,
+                        translucent white→transparent so the image underneath
+                        remains visible right up to the text. */}
+                    <div className="absolute inset-x-0 bottom-0 px-3 pt-8 pb-3 bg-gradient-to-t from-white via-white/90 to-transparent flex flex-col items-center text-center">
+                      <h3 className="text-sm font-bold text-secondary-blue tracking-tight line-clamp-1 group-hover:text-primary-orange transition-colors">
+                        {init.name}
+                      </h3>
+                      {init.tagline ? (
+                        <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">
+                          {init.tagline}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                </Wrapper>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Partners Logos section with infinite scrolling marquee — full-bleed */}
       <section className="py-16 text-center w-full overflow-hidden" id="partners">
@@ -680,6 +724,85 @@ export default function HomeView({ onNavigate }) {
             </div>
           </div>
         )}
+      </section>
+
+      {/* CALL TO ACTION — sits at the very bottom of the home flow so it lands
+          last in the eye-line, right before the footer. Calmer light surface
+          with a soft grid + watermark so the orange headline accent and CTA
+          button read as the focal points instead of a full gradient slab. */}
+      <section className="py-14 md:py-20 max-w-[1280px] mx-auto px-5 md:px-[64px]" id="cta">
+        <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-orange-50/40 to-blue-50/40 shadow-xl shadow-slate-200/60">
+
+          {/* Grid watermark — soft dot/grid pattern that adds texture without
+              competing with the content. Pure SVG so it scales crisply. */}
+          <svg
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.35]"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <pattern id="cta-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#0a3d72" strokeWidth="0.5" strokeOpacity="0.18" />
+              </pattern>
+              <radialGradient id="cta-fade" cx="50%" cy="50%" r="65%">
+                <stop offset="0%" stopColor="white" stopOpacity="0" />
+                <stop offset="100%" stopColor="white" stopOpacity="1" />
+              </radialGradient>
+              <mask id="cta-mask">
+                <rect width="100%" height="100%" fill="url(#cta-fade)" />
+              </mask>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#cta-grid)" mask="url(#cta-mask)" />
+          </svg>
+
+          {/* Brand logo watermark — large, low-opacity asset sitting at the right
+              edge so the panel reads as branded content, not just a box. */}
+          <img
+            src={startupBarishalLogo2}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none select-none absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-42 md:w-54 opacity-[0.10]"
+            draggable="false"
+          />
+
+          {/* Soft accent blobs to keep the warmth without screaming gradient. */}
+          <div className="absolute inset-0 z-0 pointer-events-none">
+            <div className="absolute top-[-30%] left-[-10%] w-[55%] h-[160%] bg-primary-orange/8 rounded-full blur-3xl" />
+            <div className="absolute bottom-[-30%] right-[-10%] w-[55%] h-[160%] bg-secondary-blue/10 rounded-full blur-3xl" />
+          </div>
+
+          <div className="relative z-10 flex flex-col items-center text-center max-w-[800px] mx-auto gap-6 p-10 md:p-16">
+            <div className="inline-flex items-center gap-2 bg-primary-orange/10 border border-primary-orange/30 text-primary-orange px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">
+              <Rocket className="w-3.5 h-3.5" />
+              Barishal Tech Ecosystem Pulse
+            </div>
+            <h2 className="text-3xl md:text-5xl font-extrabold text-secondary-blue tracking-tight leading-tight">
+              Ready to <span className="text-primary-orange">Launch?</span>
+            </h2>
+            <p className="text-sm md:text-base text-slate-600 leading-relaxed max-w-[650px]">
+              Join our next incubation cohort. Get access to the physical office desk resources, direct capital networks, and senior engineering mentors needed to scale your project.
+            </p>
+            {applyButtonLink ? (
+              <a
+                href={applyButtonLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-primary-orange hover:bg-primary-hover text-white px-8 py-4 rounded-xl font-bold text-sm shadow-lg shadow-orange-500/30 transition-all hover:translate-y-[-2px] mt-4 z-10 cursor-pointer"
+              >
+                <span>Apply for Incubation</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </a>
+            ) : (
+              <button
+                onClick={() => onNavigate("incubation")}
+                className="inline-flex items-center gap-2 bg-primary-orange hover:bg-primary-hover text-white px-8 py-4 rounded-xl font-bold text-sm shadow-lg shadow-orange-500/30 transition-all hover:translate-y-[-2px] mt-4 z-10 cursor-pointer"
+              >
+                <span>Apply for Incubation</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
       </section>
 
     </div>
@@ -757,28 +880,28 @@ function TeamAvatarRow({ team }) {
   const active = team[index];
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center w-full overflow-hidden">
       {/* Avatar row. `overflow-hidden` keeps off-screen neighbors from
           forcing horizontal scroll on narrow viewports without breaking
           the visible carousel transform. */}
-      <div className="relative w-full max-w-[920px] overflow-hidden">
+      <div className="relative w-full max-w-[1100px] mx-auto px-12 sm:px-16">
         {total > 1 && (
           <>
             <button
               type="button"
               onClick={goPrev}
               aria-label="Previous team member"
-              className="flex absolute -left-1 sm:-left-2 top-1/2 -translate-y-1/2 z-40 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white border border-slate-200 shadow-md text-secondary-blue hover:text-primary-orange hover:border-primary-orange/40 hover:scale-105 transition-all items-center justify-center cursor-pointer"
+              className="flex absolute left-0 sm:left-2 top-1/2 -translate-y-1/2 z-40 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white border border-slate-200 shadow-md text-secondary-blue hover:text-primary-orange hover:border-primary-orange/40 hover:scale-105 transition-all items-center justify-center cursor-pointer"
             >
-              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
             <button
               type="button"
               onClick={goNext}
               aria-label="Next team member"
-              className="flex absolute -right-1 sm:-right-2 top-1/2 -translate-y-1/2 z-40 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white border border-slate-200 shadow-md text-secondary-blue hover:text-primary-orange hover:border-primary-orange/40 hover:scale-105 transition-all items-center justify-center cursor-pointer"
+              className="flex absolute right-0 sm:right-2 top-1/2 -translate-y-1/2 z-40 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white border border-slate-200 shadow-md text-secondary-blue hover:text-primary-orange hover:border-primary-orange/40 hover:scale-105 transition-all items-center justify-center cursor-pointer"
             >
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </>
         )}

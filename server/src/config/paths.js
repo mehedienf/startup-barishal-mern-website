@@ -56,6 +56,7 @@ export const COHORT_UPLOADS_DIR = path.join(SERVER_UPLOADS_DIR, "cohorts");
 export const TEAM_UPLOADS_DIR = path.join(SERVER_UPLOADS_DIR, "teams");
 export const PARTNER_UPLOADS_DIR = path.join(SERVER_UPLOADS_DIR, "partners");
 export const FEATURED_UPLOADS_DIR = path.join(SERVER_UPLOADS_DIR, "featured");
+export const INITIATIVE_UPLOADS_DIR = path.join(SERVER_UPLOADS_DIR, "initiatives");
 
 const ALL_UPLOAD_DIRS = [
   LEGACY_UPLOADS_DIR,
@@ -64,6 +65,7 @@ const ALL_UPLOAD_DIRS = [
   TEAM_UPLOADS_DIR,
   PARTNER_UPLOADS_DIR,
   FEATURED_UPLOADS_DIR,
+  INITIATIVE_UPLOADS_DIR,
 ];
 
 /**

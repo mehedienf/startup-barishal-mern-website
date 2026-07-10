@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { apiFetch, resolveAssetUrl } from "../lib/api.js";
-import { Calendar, MapPin, ChevronLeft, ChevronRight, X, Loader2 } from "lucide-react";
+import { Calendar, MapPin, ChevronLeft, ChevronRight, X, Loader2, Image as ImageIcon } from "lucide-react";
 
 const FALLBACK_GALLERY = [
     "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80",
@@ -39,7 +39,24 @@ export default function EventsView({ onNavigate }) {
                 if (!cancelled) {
                     const sorted = [...data].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
                     setEvents(sorted);
-                    if (sorted.length > 0) setSelectedEventId(sorted[0].id);
+                    // Prefer deep-link target from URL hash (set by HomeView "More"
+                    // buttons); fall back to the most recent event.
+                    const deepLinkedId = window.location.hash.replace(/^#/, "");
+                    const initial =
+                        (deepLinkedId && sorted.find((e) => e.id === deepLinkedId)?.id) ||
+                        (sorted[0] && sorted[0].id) ||
+                        null;
+                    setSelectedEventId(initial);
+                    if (initial) {
+                        // Scroll to the detail on next paint so the user actually
+                        // sees the card they clicked.
+                        setTimeout(() => {
+                            document.getElementById("event-detail")?.scrollIntoView({
+                                behavior: "smooth",
+                                block: "start",
+                            });
+                        }, 80);
+                    }
                 }
             } catch (err) {
                 console.error("Failed to load events:", err);
@@ -138,6 +155,11 @@ export default function EventsView({ onNavigate }) {
                                         key={event.id}
                                         onClick={() => {
                                             setSelectedEventId(event.id);
+                                            // Keep the URL hash in sync so the deep
+                                            // link is shareable / refresh-safe.
+                                            if (typeof window !== "undefined") {
+                                                history.replaceState(null, "", `#${event.id}`);
+                                            }
                                             // Smooth-scroll the detail into view below
                                             setTimeout(() => {
                                                 document.getElementById("event-detail")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -221,6 +243,41 @@ export default function EventsView({ onNavigate }) {
                                 </p>
                             )}
                         </div>
+
+                        {/* Cover Photo — full-width hero image for the selected event */}
+                        {selectedEvent.coverImage && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSelectedImage({ ...selectedEvent, gallery: selectedGallery });
+                                    setCurrentImageIndex(0);
+                                }}
+                                className="group relative w-full h-72 md:h-[480px] rounded-3xl overflow-hidden cursor-pointer shadow-xl ring-1 ring-slate-200/60"
+                                aria-label={`View ${selectedEvent.title} cover photo`}
+                            >
+                                <img
+                                    src={resolveAssetUrl(selectedEvent.coverImage)}
+                                    alt={`${selectedEvent.title} cover`}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                    referrerPolicy="no-referrer"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-secondary-blue/70 via-secondary-blue/10 to-transparent" />
+                                <div className="absolute inset-x-0 bottom-0 p-6 md:p-8 flex flex-col gap-2 text-left">
+                                    <span className="inline-flex items-center gap-2 self-start bg-primary-orange text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+                                        <ImageIcon className="w-3 h-3" />
+                                        Cover
+                                    </span>
+                                    <h3 className="text-2xl md:text-4xl font-extrabold text-white drop-shadow-md">
+                                        {selectedEvent.title}
+                                    </h3>
+                                </div>
+                                {/* <div className="absolute inset-0 bg-primary-orange/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                    <div className="text-white font-semibold text-sm bg-primary-orange/80 px-4 py-2 rounded-xl shadow-lg">
+                                        Click to enlarge
+                                    </div>
+                                </div> */}
+                            </button>
+                        )}
 
                         {/* Photo Gallery Grid */}
                         <div className="flex justify-center">

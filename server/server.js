@@ -35,6 +35,7 @@ import { registerPartners } from "./src/routes/partners.js";
 import { registerCohorts } from "./src/routes/cohorts.js";
 import { registerEvents } from "./src/routes/events.js";
 import { registerFeatured } from "./src/routes/featured.js";
+import { registerInitiatives } from "./src/routes/initiatives.js";
 
 import { mountStaticSpa } from "./src/staticSpa.js";
 
@@ -81,6 +82,7 @@ registerContacts(app);
 registerCohorts(app);
 registerEvents(app);
 registerFeatured(app);
+registerInitiatives(app);
 registerMembers(app);
 registerMemberships(app);
 registerPartners(app);

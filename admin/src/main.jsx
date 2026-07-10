@@ -13,6 +13,7 @@ import PartnersPage from './components/PartnersPage.jsx';
 import MembershipsPage from './components/MembershipsPage.jsx';
 import FeaturedImagesPage from './components/FeaturedImagesPage.jsx';
 import HomeStatsPage from './components/HomeStatsPage.jsx';
+import InitiativesPage from './components/InitiativesPage.jsx';
 import './index.css';
 
 // No `basename` — the admin SPA is hosted at the subdomain root (e.g.
@@ -36,6 +37,7 @@ const router = createBrowserRouter(
         { path: 'partners', element: <PartnersPage /> },
         { path: 'memberships', element: <MembershipsPage /> },
         { path: 'featured', element: <FeaturedImagesPage /> },
+        { path: 'initiatives', element: <InitiativesPage /> },
         { path: 'home-stats', element: <HomeStatsPage /> },
         // Catch-all so an unmatched admin URL still renders the chrome
         // instead of leaving a blank page.
